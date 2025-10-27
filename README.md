@@ -1,6 +1,6 @@
 # goctx
 
-Propagate context.Context through Go call graphs automatically.
+Propagate `context.Context` through Go call graphs automatically.
 
 This tool analyzes your Go source, ensures a `context.Context` parameter exists where needed, and propagates it through call chains by updating function signatures and call sites. It can also stop at well-defined boundaries such as `http.HandlerFunc`, deriving the context from `req.Context()`.
 
@@ -27,11 +27,15 @@ You can install the CLI with a regular `go install` or build from source.
 
   - Simple build:
 
+    ```shell
     go build -o bin/goctx ./app/goctx
+    ````
 
   - Using the provided Makefile and GoReleaser (snapshot build):
 
+    ```shell
     make build
+    ```
 
   Artifacts will be placed under the `dist/` directory when using GoReleaser.
 
@@ -44,15 +48,21 @@ Examples:
 
 - Add/propagate ctx into a function and its callers:
 
-  goctx ./internal/foo/bar.go:DoThing
+```shell
+goctx ./internal/foo/bar.go:DoThing
+```
 
 - Stop propagation at an explicit boundary function:
 
-  goctx --stop-at ./internal/foo/baz.go:BoundaryFunc ./internal/foo/bar.go:DoThing
+```shell
+goctx --stop-at ./internal/foo/baz.go:BoundaryFunc ./internal/foo/bar.go:DoThing
+```
 
 - Stop at HTTP boundaries and derive ctx from `req.Context()` automatically:
 
-  goctx --http ./internal/http/handler.go:ServeHTTP
+```shell
+goctx --http ./internal/http/handler.go:ServeHTTP
+```
 
 Notes:
 
@@ -104,23 +114,33 @@ Requirements:
 
 Setup developer tools via Homebrew:
 
-  make init
+```shell
+make init
+```
 
 Lint:
 
-  make lint
+```shell
+make lint
+```
 
 Run tests with coverage (also generates coverage.html):
 
-  make test-unit
+```shell
+make test-unit
+```
 
 Or run both lint and unit tests:
 
-  make test
+```shell
+make test
+```
 
 Run a snapshot build using GoReleaser:
 
-  make build
+```shell
+make build
+```
 
 ### Project layout
 
@@ -143,7 +163,7 @@ Run a snapshot build using GoReleaser:
 
 ## Contributing
 
-The project is not yet open to contributions; but stay tuned!
+See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## License
 
