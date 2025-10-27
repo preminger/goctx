@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: init lint test test-unit build
+.PHONY: init lint test test-unit build release
 
 # Install required developer tools via Homebrew Brewfile
 init:
@@ -29,3 +29,28 @@ test-unit:
 # Uses snapshot mode so it doesn't require a VCS tag or publish a release
 build:
 	goreleaser build --snapshot --clean
+
+# Create and push a new git tag based on semantic version analysis by svu
+# Requires a clean working tree and an "origin" remote.
+release:
+	set -euo pipefail; \
+	if ! command -v svu >/dev/null 2>&1; then \
+		echo "svu not installed. Install with: brew install caarlos0/tap/svu"; \
+		exit 1; \
+	fi; \
+	if ! command -v git >/dev/null 2>&1; then \
+		echo "git is required but not found"; \
+		exit 1; \
+	fi; \
+	if [ -n "$$(git status --porcelain)" ]; then \
+		echo "Working tree not clean. Commit or stash changes before releasing."; \
+		exit 1; \
+	fi; \
+	if ! git ls-remote --exit-code origin >/dev/null 2>&1; then \
+		echo "No 'origin' remote configured or not reachable. Configure it before releasing."; \
+		exit 1; \
+	fi; \
+	NEXT_TAG=$$(svu next); \
+	echo "Next version: $$NEXT_TAG"; \
+	git tag -a "$$NEXT_TAG" -m "$$NEXT_TAG"; \
+	git push origin "$$NEXT_TAG"
