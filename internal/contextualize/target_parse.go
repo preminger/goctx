@@ -17,19 +17,19 @@ type targetSpec struct {
 
 var targetRe = regexp.MustCompile(`^([^:]+):(\w+)(?::(\d+))?$`)
 
-func parseTargetSpec(s string) (targetSpec, error) {
-	s = filepath.ToSlash(strings.TrimSpace(s))
-	m := targetRe.FindStringSubmatch(s)
-	if m == nil {
+func parseTargetSpec(specStr string) (targetSpec, error) {
+	specStr = filepath.ToSlash(strings.TrimSpace(specStr))
+	matches := targetRe.FindStringSubmatch(specStr)
+	if matches == nil {
 		return targetSpec{}, errors.New("invalid target format, want path/to/file.go:Func[:N]")
 	}
 	ord := 0
-	if m[3] != "" {
-		v, err := strconv.Atoi(m[3])
+	if matches[3] != "" {
+		v, err := strconv.Atoi(matches[3])
 		if err != nil || v <= 0 {
-			return targetSpec{}, fmt.Errorf("invalid ordinal N in %q", s)
+			return targetSpec{}, fmt.Errorf("invalid ordinal N in %q", specStr)
 		}
 		ord = v
 	}
-	return targetSpec{File: m[1], FuncName: m[2], Ordinal: ord}, nil
+	return targetSpec{File: matches[1], FuncName: matches[2], Ordinal: ord}, nil
 }

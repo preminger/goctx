@@ -37,9 +37,9 @@ func resolveTarget(pkgs []*packages.Package, spec targetSpec) (*targetResolution
 	if err != nil {
 		return nil, fmt.Errorf("resolving absolute path: %w", err)
 	}
-	for _, p := range pkgs {
-		for _, f := range p.Syntax {
-			posFile := p.Fset.File(f.Pos())
+	for _, pkg := range pkgs {
+		for _, fileAST := range pkg.Syntax {
+			posFile := pkg.Fset.File(fileAST.Pos())
 			if posFile == nil {
 				continue
 			}
@@ -51,7 +51,7 @@ func resolveTarget(pkgs []*packages.Package, spec targetSpec) (*targetResolution
 			if fp != absFile {
 				continue
 			}
-			candidates := findFuncDeclsByName(f, spec.FuncName)
+			candidates := findFuncDeclsByName(fileAST, spec.FuncName)
 			if len(candidates) == 0 {
 				return nil, fmt.Errorf("no function named %s in %s", spec.FuncName, spec.File)
 			}
@@ -68,11 +68,11 @@ func resolveTarget(pkgs []*packages.Package, spec targetSpec) (*targetResolution
 				idx = 1
 			}
 			decl := candidates[idx-1]
-			obj := p.TypesInfo.Defs[decl.Name]
+			obj := pkg.TypesInfo.Defs[decl.Name]
 			if obj == nil {
 				return nil, fmt.Errorf("resolving function object for %s", spec.FuncName)
 			}
-			return &targetResolution{Pkg: p, FileAST: f, Fset: p.Fset, Info: p.TypesInfo, Decl: decl, Obj: obj}, nil
+			return &targetResolution{Pkg: pkg, FileAST: fileAST, Fset: pkg.Fset, Info: pkg.TypesInfo, Decl: decl, Obj: obj}, nil
 		}
 	}
 	return nil, fmt.Errorf("could not find file %s in loaded packages", spec.File)
@@ -113,13 +113,13 @@ func sameFile(p *packages.Package, fn *ast.FuncDecl, spec *targetSpec) bool {
 	return abs1 == abs2
 }
 
-func ordinalOfFuncInFile(p *packages.Package, fn *ast.FuncDecl, spec *targetSpec) int {
-	fi := p.Fset.File(fn.Pos())
+func ordinalOfFuncInFile(pkg *packages.Package, fn *ast.FuncDecl, spec *targetSpec) int {
+	fi := pkg.Fset.File(fn.Pos())
 	if fi == nil {
 		return 0
 	}
 	var idx int
-	ast.Inspect(getFileForPos(p, fn), func(n ast.Node) bool {
+	ast.Inspect(getFileForPos(pkg, fn), func(n ast.Node) bool {
 		fd, ok := n.(*ast.FuncDecl)
 		if !ok {
 			return true
@@ -144,7 +144,7 @@ func getFileForPos(p *packages.Package, node ast.Node) *ast.File {
 	return nil
 }
 
-func enclosingFuncDecl(file *ast.File, n ast.Node) *ast.FuncDecl {
+func enclosingFuncDecl(file *ast.File, targetNode ast.Node) *ast.FuncDecl {
 	var stack []ast.Node
 	var found *ast.FuncDecl
 	ast.Inspect(file, func(node ast.Node) bool {
@@ -158,7 +158,7 @@ func enclosingFuncDecl(file *ast.File, n ast.Node) *ast.FuncDecl {
 			return true
 		}
 		stack = append(stack, node)
-		if node == n {
+		if node == targetNode {
 			// walk back to find enclosing FuncDecl
 			for i := len(stack) - 1; i >= 0; i-- {
 				if fd, ok := stack[i].(*ast.FuncDecl); ok {

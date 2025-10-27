@@ -20,16 +20,16 @@ const (
 
 // shouldStopAt evaluates termination conditions for the given enclosing function.
 // Returns (true, reason) when we should not propagate further upward.
-func shouldStopAt(fn *ast.FuncDecl, p *packages.Package, opts Options, stopSpec *targetSpec) (bool, StopReason) {
+func shouldStopAt(funcDecl *ast.FuncDecl, pkg *packages.Package, opts Options, stopSpec *targetSpec) (bool, StopReason) {
 	// stop-at specific
 	if stopSpec != nil {
-		if sameFile(p, fn, stopSpec) && fn.Name.Name == stopSpec.FuncName {
+		if sameFile(pkg, funcDecl, stopSpec) && funcDecl.Name.Name == stopSpec.FuncName {
 			if stopSpec.Ordinal < 1 {
 				return true, StopReasonStopAt
 			}
 
 			// If ordinal was provided, ensure it matches
-			if idx := ordinalOfFuncInFile(p, fn, stopSpec); idx == stopSpec.Ordinal {
+			if idx := ordinalOfFuncInFile(pkg, funcDecl, stopSpec); idx == stopSpec.Ordinal {
 				return true, StopReasonStopAt
 			}
 		}
@@ -37,32 +37,32 @@ func shouldStopAt(fn *ast.FuncDecl, p *packages.Package, opts Options, stopSpec 
 
 	// html handler boundary
 	if opts.HTML {
-		if isHTTPHandlerFunc(fn, p) {
+		if isHTTPHandlerFunc(funcDecl, pkg) {
 			return true, StopReasonHTTP
 		}
 	}
 
 	// main termination
-	if isMainFunction(fn, p) {
+	if isMainFunction(funcDecl, pkg) {
 		return true, StopReasonMain
 	}
 	return false, StopReasonNone
 }
 
-func isMainFunction(fn *ast.FuncDecl, p *packages.Package) bool {
+func isMainFunction(fn *ast.FuncDecl, pkg *packages.Package) bool {
 	if fn == nil || fn.Recv != nil {
 		return false
 	}
 	if fn.Name.Name != FuncNameMain {
 		return false
 	}
-	if p.PkgPath != FuncNameMain && p.Name != FuncNameMain {
+	if pkg.PkgPath != FuncNameMain && pkg.Name != FuncNameMain {
 		return false
 	}
 	return true
 }
 
-func isHTTPHandlerFunc(fn *ast.FuncDecl, p *packages.Package) bool {
+func isHTTPHandlerFunc(fn *ast.FuncDecl, pkg *packages.Package) bool {
 	if fn == nil {
 		return false
 	}
@@ -71,19 +71,19 @@ func isHTTPHandlerFunc(fn *ast.FuncDecl, p *packages.Package) bool {
 		return false
 	}
 	// Second param should be *net/http.Request
-	t := p.TypesInfo.TypeOf(params.List[1].Type)
+	t := pkg.TypesInfo.TypeOf(params.List[1].Type)
 	pt, ok := t.(*types.Pointer)
 	if !ok {
 		return false
 	}
-	n, ok := pt.Elem().(*types.Named)
+	namedType, ok := pt.Elem().(*types.Named)
 	if !ok {
 		return false
 	}
-	if n.Obj() == nil || n.Obj().Pkg() == nil {
+	if namedType.Obj() == nil || namedType.Obj().Pkg() == nil {
 		return false
 	}
-	if n.Obj().Name() == "Request" && n.Obj().Pkg().Path() == "net/http" {
+	if namedType.Obj().Name() == "Request" && namedType.Obj().Pkg().Path() == "net/http" {
 		return true
 	}
 	return false
@@ -92,8 +92,8 @@ func isHTTPHandlerFunc(fn *ast.FuncDecl, p *packages.Package) bool {
 // ensureCtxAvailableAtBoundary ensures that inside fn, a ctx variable exists.
 // If reason is StopReasonMain: inserts ctx := context.Background() at top if not present.
 // If reason is OptNameHTTP: inserts ctx := <req>.Context() where <req> is the name of the *http.Request parameter.
-func ensureCtxAvailableAtBoundary(p *packages.Package, file *ast.File, fn *ast.FuncDecl, reason StopReason) (bool, error) {
-	if hasCtxInScope(fn, p) {
+func ensureCtxAvailableAtBoundary(pkg *packages.Package, file *ast.File, fn *ast.FuncDecl, reason StopReason) (bool, error) {
+	if hasCtxInScope(fn, pkg) {
 		return true, nil
 	}
 	switch reason {
@@ -103,7 +103,7 @@ func ensureCtxAvailableAtBoundary(p *packages.Package, file *ast.File, fn *ast.F
 		fn.Body.List = append([]ast.Stmt{stmt}, fn.Body.List...)
 		return true, nil
 	case StopReasonHTTP:
-		reqName := findHTTPRequestParamName(fn, p)
+		reqName := findHTTPRequestParamName(fn, pkg)
 		if reqName == "" {
 			return false, errors.New("determining http request parameter name")
 		}
@@ -162,7 +162,7 @@ func ensureCallHasCtxArg(_ *packages.Package, call *ast.CallExpr) {
 	call.Args = append([]ast.Expr{ast.NewIdent(VarNameCtx)}, call.Args...)
 }
 
-func hasCtxInScope(fn *ast.FuncDecl, p *packages.Package) bool {
+func hasCtxInScope(fn *ast.FuncDecl, pkg *packages.Package) bool {
 	found := false
 	ast.Inspect(fn, func(n ast.Node) bool {
 		id, ok := n.(*ast.Ident)
@@ -170,9 +170,9 @@ func hasCtxInScope(fn *ast.FuncDecl, p *packages.Package) bool {
 			return true
 		}
 		// Check object type
-		obj := p.TypesInfo.Uses[id]
+		obj := pkg.TypesInfo.Uses[id]
 		if obj == nil {
-			obj = p.TypesInfo.Defs[id]
+			obj = pkg.TypesInfo.Defs[id]
 		}
 		if obj == nil {
 			return true

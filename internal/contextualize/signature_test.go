@@ -7,16 +7,16 @@ import (
 )
 
 func TestEnsureImport_AddsOnceAndSorts(t *testing.T) {
-	f := &ast.File{}
-	ensureImport(f, "context")
-	ensureImport(f, "fmt")
-	ensureImport(f, "context")
+	astFile := &ast.File{}
+	ensureImport(astFile, "context")
+	ensureImport(astFile, "fmt")
+	ensureImport(astFile, "context")
 	// expect two imports: context and fmt, sorted lexicographically
-	if len(f.Imports) != 2 {
-		t.Fatalf("expected 2 imports, got %d", len(f.Imports))
+	if len(astFile.Imports) != 2 {
+		t.Fatalf("expected 2 imports, got %d", len(astFile.Imports))
 	}
-	got0 := f.Imports[0].Path.Value
-	got1 := f.Imports[1].Path.Value
+	got0 := astFile.Imports[0].Path.Value
+	got1 := astFile.Imports[1].Path.Value
 	if (got0 != "\"context\"" || got1 != "\"fmt\"") && (got0 != "\"fmt\"" || got1 != "\"context\"") {
 		t.Fatalf("unexpected imports order: %s, %s", got0, got1)
 	}

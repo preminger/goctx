@@ -93,13 +93,13 @@ func Run(_ context.Context, opts Options) error {
 		visited[curr] = true
 
 		// Scan all packages/files for calls to curr
-		for _, p := range pkgs {
-			for i, f := range p.Syntax {
-				fi := p.Fset.File(f.Pos())
+		for _, pkg := range pkgs {
+			for fileIndex, fileAST := range pkg.Syntax {
+				fi := pkg.Fset.File(fileAST.Pos())
 				if fi == nil {
 					continue
 				}
-				ast.Inspect(f, func(n ast.Node) bool {
+				ast.Inspect(fileAST, func(n ast.Node) bool {
 					call, ok := n.(*ast.CallExpr)
 					if !ok {
 						return true
@@ -107,49 +107,49 @@ func Run(_ context.Context, opts Options) error {
 					var calledObj types.Object
 					switch fun := call.Fun.(type) {
 					case *ast.Ident:
-						calledObj = p.TypesInfo.Uses[fun]
+						calledObj = pkg.TypesInfo.Uses[fun]
 					case *ast.SelectorExpr:
-						calledObj = p.TypesInfo.Uses[fun.Sel]
+						calledObj = pkg.TypesInfo.Uses[fun.Sel]
 					}
 					if calledObj == nil || calledObj != curr {
 						return true
 					}
 					// Found a call. Find enclosing function decl.
-					enc := enclosingFuncDecl(f, call)
+					enc := enclosingFuncDecl(fileAST, call)
 					if enc == nil {
 						return true
 					}
 
-					stopHere, stopReason := shouldStopAt(enc, p, opts, stopSpec)
+					stopHere, stopReason := shouldStopAt(enc, pkg, opts, stopSpec)
 					if stopHere {
 						// At stop boundary: ensure a ctx exists, derive if necessary (main/http) and pass to call
-						ensured, err := ensureCtxAvailableAtBoundary(p, f, enc, stopReason)
+						ensured, err := ensureCtxAvailableAtBoundary(pkg, fileAST, enc, stopReason)
 						if err != nil {
 							// continue but report later? Simpler: fail fast
 							panic(fmt.Errorf("ensuring ctx at stop boundary: %w", err))
 						}
 						_ = ensured
-						ensureCallHasCtxArg(p, call)
-						markFileModified(modifiedFiles, p.Fset, p.Syntax[i])
+						ensureCallHasCtxArg(pkg, call)
+						markFileModified(modifiedFiles, pkg.Fset, pkg.Syntax[fileIndex])
 						return true
 					}
 
 					// If ctx in scope, just pass; else add to enclosing func and enqueue it
-					if hasCtxInScope(enc, p) {
-						ensureCallHasCtxArg(p, call)
-						markFileModified(modifiedFiles, p.Fset, p.Syntax[i])
+					if hasCtxInScope(enc, pkg) {
+						ensureCallHasCtxArg(pkg, call)
+						markFileModified(modifiedFiles, pkg.Fset, pkg.Syntax[fileIndex])
 						return true
 					}
 
 					// Add ctx param to enclosing function signature
-					if !funcHasCtxParam(enc, p.TypesInfo) {
-						ensureFuncHasCtxParam(p.Fset, f, enc)
+					if !funcHasCtxParam(enc, pkg.TypesInfo) {
+						ensureFuncHasCtxParam(pkg.Fset, fileAST, enc)
 					}
-					ensureCallHasCtxArg(p, call)
-					markFileModified(modifiedFiles, p.Fset, p.Syntax[i])
+					ensureCallHasCtxArg(pkg, call)
+					markFileModified(modifiedFiles, pkg.Fset, pkg.Syntax[fileIndex])
 
 					// Enqueue enclosing function's object to continue traversal upward
-					if def := p.TypesInfo.Defs[enc.Name]; def != nil {
+					if def := pkg.TypesInfo.Defs[enc.Name]; def != nil {
 						queue = append(queue, def)
 					}
 					return true
