@@ -254,10 +254,9 @@ func writeModified(pkgs []*packages.Package) error {
 		for _, syntaxTree := range p.Syntax {
 			filename := p.Fset.File(syntaxTree.Pos()).Name()
 			var buf bytes.Buffer
-			// Use go/format to pretty-print the AST with a fresh FileSet. This avoids
-			// relying on possibly-missing positions on newly created nodes, which can
-			// otherwise lead to malformed output (missing spaces/indentation).
-			if err := format.Node(&buf, token.NewFileSet(), syntaxTree); err != nil {
+			// Use go/format with the package's original FileSet to preserve comment positions
+			// and relative spacing, avoiding comment mangling while still normalizing layout.
+			if err := format.Node(&buf, p.Fset, syntaxTree); err != nil {
 				return fmt.Errorf("formatting file %s: %w", filename, err)
 			}
 			if err := os.WriteFile(filename, buf.Bytes(), 0o644); err != nil { //nolint:gosec // Appropriate permissions for source files
