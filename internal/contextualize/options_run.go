@@ -1,11 +1,12 @@
 package contextualize
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"go/ast"
-	"go/printer"
+	"go/format"
 	"go/token"
 	"go/types"
 	"os"
@@ -247,18 +248,19 @@ func markFileModified(mod map[string]bool, fset *token.FileSet, file *ast.File) 
 	}
 }
 
-// writeModified writes all package files back using their fset and syntax.
+// writeModified writes all package files back using canonical gofmt formatting.
 func writeModified(pkgs []*packages.Package) error {
 	for _, p := range pkgs {
 		for _, f := range p.Syntax {
 			filename := p.Fset.File(f.Pos()).Name()
-			var buf strings.Builder
-			cfg := &printer.Config{Mode: printer.TabIndent}
-			if err := cfg.Fprint(&buf, p.Fset, f); err != nil {
-				return fmt.Errorf("printing file %s: %w", filename, err)
+			var buf bytes.Buffer
+			// Use go/format to pretty-print the AST with a fresh FileSet. This avoids
+			// relying on possibly-missing positions on newly created nodes, which can
+			// otherwise lead to malformed output (missing spaces/indentation).
+			if err := format.Node(&buf, token.NewFileSet(), f); err != nil {
+				return fmt.Errorf("formatting file %s: %w", filename, err)
 			}
-			// Best-effort formatting already done; write file
-			if err := os.WriteFile(filename, []byte(buf.String()), 0o644); err != nil { //nolint:gosec // This is an appropriate permissions setting for source-code files.
+			if err := os.WriteFile(filename, buf.Bytes(), 0o644); err != nil { //nolint:gosec // Appropriate permissions for source files
 				return fmt.Errorf("writing file %s: %w", filename, err)
 			}
 		}
