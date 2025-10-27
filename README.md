@@ -1,4 +1,4 @@
-# goctx (contextualize)
+# goctx
 
 Propagate context.Context through Go call graphs automatically.
 
@@ -19,7 +19,7 @@ You can install the CLI with a regular `go install` or build from source.
 
 - Latest version using `go install`:
 
-  go install github.com/example/contextualize/app/goctx@latest
+  go install github.com/preminger/goctx@latest
 
   This will install a `goctx` binary in your `GOBIN` (or `$GOPATH/bin`).
 
@@ -55,6 +55,7 @@ Examples:
   goctx --http ./internal/http/handler.go:ServeHTTP
 
 Notes:
+
 - The optional `:N` suffix can be used if there are multiple functions with the same name in the file and you want to disambiguate by line number (N is the 1-based starting line of the function).
 - The tool will rename a blank `_` `context.Context` parameter to `ctx` in the target when needed.
 
@@ -67,12 +68,14 @@ Usage:
   goctx [flags] "<path/to/file.go:FuncName[:N]>"
 
 Flags:
+
 - --stop-at string
   Optional terminating function path `path/to/file.go:FuncName[:N]` where propagation should stop.
 - --http
   Treat HTTP handlers (`http.HandlerFunc`) as boundaries and derive `ctx` from `req.Context()`.
 
 Behavior summary:
+
 - If the target function has no `context.Context` parameter, one named `ctx` will be added.
 - All call sites to the modified function will be updated to pass `ctx` (or a derived context if required by boundaries).
 - Propagation continues along the call graph until a stopping point (explicit `--stop-at`, HTTP boundary when `--http` is set, the `main` function, or other analysis-defined limits).
@@ -81,10 +84,12 @@ Behavior summary:
 ## Examples in this repo
 
 The repository contains end-to-end test inputs and golden outputs under:
+
 - internal/contextualize/testdata/input/
 - internal/contextualize/testdata/golden/
 
 You can inspect pairs like these to understand before/after transformations:
+
 - internal/contextualize/testdata/input/e2e_ctxparam_blank_to_ctx/main.go
 - internal/contextualize/testdata/golden/e2e_ctxparam_blank_to_ctx_main_go.golden
 
@@ -93,6 +98,7 @@ There are additional scenarios covering propagation across multiple packages and
 ## Development
 
 Requirements:
+
 - Go (a recent version per go.mod)
 - Optional: Homebrew for developer tooling via Brewfile
 
@@ -137,10 +143,7 @@ Run a snapshot build using GoReleaser:
 
 ## Contributing
 
-Contributions are welcome! Please:
-- Open an issue describing the problem or enhancement.
-- For code changes, include tests. You can look at existing tests in `internal/contextualize` as examples.
-- Run `make test` before submitting a PR.
+The project is not yet open to contributions; but stay tuned!
 
 ## License
 

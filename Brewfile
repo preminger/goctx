@@ -13,6 +13,7 @@ brew "gofumpt"
 brew "goimports"
 brew "golangci-lint"
 brew "golangci-lint-langserver"
+brew "markdownlint-cli2"
 
 # From tap
 brew "caarlos0/tap/svu"

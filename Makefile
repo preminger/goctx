@@ -1,13 +1,21 @@
 SHELL := /bin/bash
 
-.PHONY: init lint test test-unit build release
+.PHONY: init lint markdownlint test test-unit build release
 
 # Install required developer tools via Homebrew Brewfile
 init:
 	brew bundle install --no-lock
 
+# Run markdownlint on all Markdown files
+markdownlint:
+	@if ! command -v markdownlint-cli2 >/dev/null 2>&1; then \
+		echo "markdownlint-cli2 not installed. Run: make init"; \
+		exit 1; \
+	fi; \
+	markdownlint-cli2 "**/*.md"
+
 # Run linters and auto-fix simple issues when possible
-lint:
+lint: markdownlint
 	golangci-lint run --fix --allow-parallel-runners
 
 # Aggregate test target: runs lint and unit tests with coverage
