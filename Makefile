@@ -4,7 +4,7 @@ SHELL := /bin/bash
 
 # Install required developer tools via Homebrew Brewfile
 init:
-	brew bundle install --no-lock
+	brew bundle install
 
 # Run markdownlint on all Markdown files
 markdownlint:
