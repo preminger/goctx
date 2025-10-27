@@ -1,0 +1,38 @@
+name: checks
+
+on:
+  pull_request:
+    branches: [ main ]
+    types:
+      - closed
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    if: ${{ github.event.pull_request.merged == true }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          # If your repo has a go.mod, this will pick the version from it.
+          go-version-file: go.mod
+          cache: true
+
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@main
+
+      - name: Install tools
+        run: make init
+
+      - name: Run tests
+        run: make test
+
+      - name: Perform release
+        run: make release
