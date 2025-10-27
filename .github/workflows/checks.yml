@@ -24,5 +24,11 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@main
+
+      - name: Install tools
+        run: make init
+
       - name: Run tests
         run: make test
