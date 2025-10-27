@@ -41,24 +41,6 @@ build:
 # Create and push a new git tag based on semantic version analysis by svu
 # Requires a clean working tree and an "origin" remote.
 release:
-	set -euo pipefail; \
-	if ! command -v svu >/dev/null 2>&1; then \
-		echo "svu not installed. Install with: brew install caarlos0/tap/svu"; \
-		exit 1; \
-	fi; \
-	if ! command -v git >/dev/null 2>&1; then \
-		echo "git is required but not found"; \
-		exit 1; \
-	fi; \
-	if [ -n "$$(git status --porcelain)" ]; then \
-		echo "Working tree not clean. Commit or stash changes before releasing."; \
-		exit 1; \
-	fi; \
-	if ! git ls-remote --exit-code origin >/dev/null 2>&1; then \
-		echo "No 'origin' remote configured or not reachable. Configure it before releasing."; \
-		exit 1; \
-	fi; \
-	NEXT_TAG=$$(svu next); \
-	echo "Next version: $$NEXT_TAG"; \
-	git tag -a "$$NEXT_TAG" -m "$$NEXT_TAG"; \
-	git push origin "$$NEXT_TAG"
+	git tag "$(shell svu next)"
+	git push --tags
+	goreleaser release --clean
