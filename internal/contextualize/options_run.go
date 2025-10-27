@@ -254,8 +254,7 @@ func writeModified(pkgs []*packages.Package) error {
 		for _, syntaxTree := range p.Syntax {
 			filename := p.Fset.File(syntaxTree.Pos()).Name()
 			var buf bytes.Buffer
-			// Use go/format with the package's original FileSet to preserve comment positions
-			// and relative spacing, avoiding comment mangling while still normalizing layout.
+			// Format using go/format to preserve standard gofmt style and comments
 			if err := format.Node(&buf, p.Fset, syntaxTree); err != nil {
 				return fmt.Errorf("formatting file %s: %w", filename, err)
 			}

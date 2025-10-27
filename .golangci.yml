@@ -384,6 +384,10 @@ linters:
         - github.com/jmoiron/sqlx
     varnamelen:
       min-name-length: 2
+      check-type-param: false
+      check-receiver: false
+      ignore-decls:
+        - g *goldie.Goldie
     wsl:
       allow-assign-and-anything: true
       allow-multiline-assign: true
@@ -419,6 +423,7 @@ linters:
       - third_party$
       - builtin$
       - examples$
+      - ^internal/contextualize/testdata($|/)
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0

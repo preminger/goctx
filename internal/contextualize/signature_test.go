@@ -2,15 +2,20 @@ package contextualize
 
 import (
 	"go/ast"
+	"go/parser"
 	"go/token"
 	"testing"
 )
 
 func TestEnsureImport_AddsOnceAndSorts(t *testing.T) {
-	astFile := &ast.File{}
-	ensureImport(astFile, "context")
-	ensureImport(astFile, "fmt")
-	ensureImport(astFile, "context")
+	fset := token.NewFileSet()
+	astFile, err := parser.ParseFile(fset, "f.go", "package p\n", parser.ParseComments)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	ensureImport(fset, astFile, "context")
+	ensureImport(fset, astFile, "fmt")
+	ensureImport(fset, astFile, "context")
 	// expect two imports: context and fmt, sorted lexicographically
 	if len(astFile.Imports) != 2 {
 		t.Fatalf("expected 2 imports, got %d", len(astFile.Imports))

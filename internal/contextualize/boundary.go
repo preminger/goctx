@@ -98,9 +98,9 @@ func ensureCtxAvailableAtBoundary(pkg *packages.Package, file *ast.File, fn *ast
 	}
 	switch reason {
 	case StopReasonMain:
-		ensureImport(file, "context")
+		ensureImport(pkg.Fset, file, "context")
 		stmt := makeAssignCtxBackground()
-		fn.Body.List = append([]ast.Stmt{stmt}, fn.Body.List...)
+		insertAfterLeadingBlankAssignsF(pkg.Fset, file, fn, stmt)
 		return true, nil
 	case StopReasonHTTP:
 		reqName := findHTTPRequestParamName(fn, pkg)
@@ -108,20 +108,98 @@ func ensureCtxAvailableAtBoundary(pkg *packages.Package, file *ast.File, fn *ast
 			return false, errors.New("determining http request parameter name")
 		}
 		stmt := makeAssignCtxFromRequest(reqName)
-		fn.Body.List = append([]ast.Stmt{stmt}, fn.Body.List...)
+		insertAfterLeadingBlankAssignsF(pkg.Fset, file, fn, stmt)
 		return true, nil
 	default:
 		return false, nil
 	}
 }
 
+// insertAfterLeadingBlankAssignsF works like insertAfterLeadingBlankAssigns but also
+// adjusts the new statement's positions so that any trailing comments on the
+// previous line stay attached to that previous statement.
+func insertAfterLeadingBlankAssignsF(fset *token.FileSet, file *ast.File, fn *ast.FuncDecl, stmt ast.Stmt) {
+	if fn == nil || fn.Body == nil {
+		return
+	}
+	idx := 0
+	for idx < len(fn.Body.List) {
+		s := fn.Body.List[idx]
+		as, ok := s.(*ast.AssignStmt)
+		if !ok || len(as.Lhs) == 0 {
+			break
+		}
+		if ident, ok := as.Lhs[0].(*ast.Ident); !ok || ident.Name != "_" {
+			break
+		}
+		idx++
+	}
+	if idx > 0 {
+		base := fn.Body.List[idx-1].End() + 1
+		lastLine := fset.Position(fn.Body.List[idx-1].End()).Line
+		// If there's a comment group on the same line, use its end as base.
+		for _, cg := range file.Comments {
+			if fset.Position(cg.Pos()).Line == lastLine {
+				cend := cg.End()
+				if cend > base {
+					base = cend + 1
+				}
+				// Nudge the comment group's position slightly earlier so it remains a trailing
+				// comment of the previous statement rather than being treated as a leading
+				// comment for the newly inserted statement.
+				for _, c := range cg.List {
+					if fset.Position(c.Slash).Line == lastLine && c.Slash > fn.Body.List[idx-1].End() {
+						c.Slash = fn.Body.List[idx-1].End() - 1
+					}
+				}
+			}
+		}
+		if assign, ok := stmt.(*ast.AssignStmt); ok {
+			setAssignApproxPos(assign, base)
+		}
+	}
+	fn.Body.List = append(fn.Body.List[:idx], append([]ast.Stmt{stmt}, fn.Body.List[idx:]...)...)
+}
+
+// setAssignApproxPos sets approximate token positions on an assignment statement to
+// ensure it prints after a given base position, helping the formatter keep
+// preceding trailing comments attached to their original lines.
+func setAssignApproxPos(assign *ast.AssignStmt, base token.Pos) {
+	assign.TokPos = base
+	// LHS identifiers
+	for _, lhs := range assign.Lhs {
+		if id, ok := lhs.(*ast.Ident); ok {
+			id.NamePos = base
+		}
+	}
+	// RHS expressions (support common patterns we generate)
+	for _, rhs := range assign.Rhs {
+		switch rhsCast := rhs.(type) {
+		case *ast.CallExpr:
+			// Function part could be selector like x.Sel
+			if sel, ok := rhsCast.Fun.(*ast.SelectorExpr); ok {
+				if xid, ok := sel.X.(*ast.Ident); ok {
+					xid.NamePos = base
+				}
+				sel.Sel.NamePos = base
+			}
+		case *ast.SelectorExpr:
+			if xid, ok := rhsCast.X.(*ast.Ident); ok {
+				xid.NamePos = base
+			}
+			rhsCast.Sel.NamePos = base
+		}
+	}
+}
+
 func makeAssignCtxBackground() ast.Stmt {
 	// ctx := context.Background()
-	return &ast.AssignStmt{
+	assign := &ast.AssignStmt{
 		Lhs: []ast.Expr{ast.NewIdent(VarNameCtx)},
 		Tok: token.DEFINE,
-		Rhs: []ast.Expr{&ast.SelectorExpr{X: ast.NewIdent("context"), Sel: ast.NewIdent("Background")}},
+		Rhs: []ast.Expr{&ast.CallExpr{Fun: &ast.SelectorExpr{X: ast.NewIdent("context"), Sel: ast.NewIdent("Background")}}},
 	}
+	return assign
 }
 
 func makeAssignCtxFromRequest(req string) ast.Stmt {
