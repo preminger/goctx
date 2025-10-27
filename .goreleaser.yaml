@@ -1,6 +1,8 @@
 # GoReleaser configuration for goctx
 # See https://goreleaser.com for detailed docs.
 
+version: 2
+
 project_name: goctx
 
 env:
@@ -34,19 +36,15 @@ builds:
 
 archives:
   - id: default
-    builds:
+    ids:
       - goctx
-    # Use zip for Windows, tar.gz for others
-    format_overrides:
-      - goos: windows
-        format: zip
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
 checksum:
   name_template: "checksums.txt"
 
 snapshot:
-  name_template: "{{ .Tag }}-next"
+  version_template: "{{ .Tag }}-next"
 
 changelog:
   sort: asc
