@@ -1,22 +1,32 @@
 name: release
 
+defaults:
+  run:
+    shell: bash
+
 on:
-  pull_request:
+  push:
     branches: [ main ]
-    types:
-      - closed
+  workflow_dispatch:
 
 concurrency:
   group: release
-  cancel-in-progress: true
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: read
 
 jobs:
   release:
+    timeout-minutes: 30
     if: ${{ github.event.pull_request.merged == true }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -33,6 +43,12 @@ jobs:
 
       - name: Run tests
         run: make test
+
+      - name: Configure git user
+        run: |
+          set -euo pipefail
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Perform release
         run: make release
