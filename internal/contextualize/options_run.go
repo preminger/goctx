@@ -251,13 +251,13 @@ func markFileModified(mod map[string]bool, fset *token.FileSet, file *ast.File) 
 // writeModified writes all package files back using canonical gofmt formatting.
 func writeModified(pkgs []*packages.Package) error {
 	for _, p := range pkgs {
-		for _, f := range p.Syntax {
-			filename := p.Fset.File(f.Pos()).Name()
+		for _, syntaxTree := range p.Syntax {
+			filename := p.Fset.File(syntaxTree.Pos()).Name()
 			var buf bytes.Buffer
 			// Use go/format to pretty-print the AST with a fresh FileSet. This avoids
 			// relying on possibly-missing positions on newly created nodes, which can
 			// otherwise lead to malformed output (missing spaces/indentation).
-			if err := format.Node(&buf, token.NewFileSet(), f); err != nil {
+			if err := format.Node(&buf, token.NewFileSet(), syntaxTree); err != nil {
 				return fmt.Errorf("formatting file %s: %w", filename, err)
 			}
 			if err := os.WriteFile(filename, buf.Bytes(), 0o644); err != nil { //nolint:gosec // Appropriate permissions for source files
