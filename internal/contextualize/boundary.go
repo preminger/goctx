@@ -235,19 +235,40 @@ func findHTTPRequestParamName(fn *ast.FuncDecl, p *packages.Package) string {
 	return ""
 }
 
-func ensureCallHasCtxArg(_ *packages.Package, call *ast.CallExpr) {
+func ensureCallHasCtxArg(_ *packages.Package, call *ast.CallExpr, ctxName string) {
+	if ctxName == "" {
+		ctxName = VarNameCtx
+	}
 	// Prepend ctx ident to arguments
-	call.Args = append([]ast.Expr{ast.NewIdent(VarNameCtx)}, call.Args...)
+	call.Args = append([]ast.Expr{ast.NewIdent(ctxName)}, call.Args...)
 }
 
-func hasCtxInScope(fn *ast.FuncDecl, pkg *packages.Package) bool {
-	found := false
+func getCtxIdentInScope(fn *ast.FuncDecl, pkg *packages.Package) string {
+	// Prefer a parameter of type context.Context with a usable name (not underscore)
+	if fn != nil && fn.Type != nil && fn.Type.Params != nil {
+		for _, field := range fn.Type.Params.List {
+			if field == nil || field.Type == nil {
+				continue
+			}
+			t := pkg.TypesInfo.TypeOf(field.Type)
+			if types.TypeString(t, func(p *types.Package) string { return p.Path() }) != "context.Context" {
+				continue
+			}
+			if len(field.Names) > 0 {
+				name := field.Names[0].Name
+				if name != "_" && name != "" {
+					return name
+				}
+			}
+		}
+	}
+	// Otherwise, search identifiers used/defined in body with type context.Context
+	var found string
 	ast.Inspect(fn, func(n ast.Node) bool {
 		id, ok := n.(*ast.Ident)
-		if !ok || id.Name != VarNameCtx {
+		if !ok || id.Name == "_" || id.Name == "" {
 			return true
 		}
-		// Check object type
 		obj := pkg.TypesInfo.Uses[id]
 		if obj == nil {
 			obj = pkg.TypesInfo.Defs[id]
@@ -256,10 +277,14 @@ func hasCtxInScope(fn *ast.FuncDecl, pkg *packages.Package) bool {
 			return true
 		}
 		if types.TypeString(obj.Type(), func(p *types.Package) string { return p.Path() }) == "context.Context" {
-			found = true
+			found = id.Name
 			return false
 		}
 		return true
 	})
 	return found
+}
+
+func hasCtxInScope(fn *ast.FuncDecl, pkg *packages.Package) bool {
+	return getCtxIdentInScope(fn, pkg) != ""
 }

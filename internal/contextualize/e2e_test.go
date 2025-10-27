@@ -81,6 +81,36 @@ func TestE2E_HTTPBoundary_PreservesComments(t *testing.T) {
 	g.Assert(t, "e2e_http_boundary_srv_go", []byte(normalizeNewlines(string(b))))
 }
 
+func TestE2E_RenameBlankCtxParamToCtx(t *testing.T) {
+	ctx := t.Context()
+	g := goldie.New(t, goldie.WithFixtureDir(fixturesDir(t)))
+	dir := writeTempModuleFromInput(t, "e2e_ctxparam_blank_to_ctx")
+	target := filepath.Join(dir, "main.go") + ":target"
+	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+	b, err := os.ReadFile(filepath.Join(dir, "main.go"))
+	if err != nil {
+		t.Fatalf("read main.go: %v", err)
+	}
+	g.Assert(t, "e2e_ctxparam_blank_to_ctx_main_go", []byte(normalizeNewlines(string(b))))
+}
+
+func TestE2E_UseExistingNamedContextParam(t *testing.T) {
+	ctx := t.Context()
+	g := goldie.New(t, goldie.WithFixtureDir(fixturesDir(t)))
+	dir := writeTempModuleFromInput(t, "e2e_ctxparam_named_use_existing")
+	target := filepath.Join(dir, "main.go") + ":target"
+	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+	b, err := os.ReadFile(filepath.Join(dir, "main.go"))
+	if err != nil {
+		t.Fatalf("read main.go: %v", err)
+	}
+	g.Assert(t, "e2e_ctxparam_named_use_existing_main_go", []byte(normalizeNewlines(string(b))))
+}
+
 // inputDir returns the path to testdata/input alongside this test file.
 func inputDir(t *testing.T) string {
 	t.Helper()
