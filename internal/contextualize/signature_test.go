@@ -32,7 +32,7 @@ func TestEnsureFuncHasCtxParam_AddsParam(t *testing.T) {
 	f := &ast.File{}
 	fn := &ast.FuncDecl{Type: &ast.FuncType{Params: &ast.FieldList{}}}
 	// info can be nil; function should still add a ctx param conservatively
-	ensureFuncHasCtxParam(fset, f, fn, nil)
+	ensureFuncHasCtxParam(fset, f, fn, nil, false)
 	if fn.Type.Params == nil || len(fn.Type.Params.List) == 0 {
 		t.Fatalf("expected a ctx param to be added")
 	}

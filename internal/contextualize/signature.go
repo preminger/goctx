@@ -12,60 +12,108 @@ import (
 
 // ensureFuncHasCtxParam ensures the function has a usable context.Context parameter.
 // Behavior:
-// - If there's a parameter of type context.Context named "_", rename it to "ctx".
+// - If there's a parameter of type context.Context named "_", rename it to "ctx" when renameBlank is true.
 // - If there's any parameter of type context.Context with a different usable name, do nothing.
 // - Otherwise, add a new first parameter "ctx context.Context".
 // Returns true if the signature was modified.
-func ensureFuncHasCtxParam(fset *token.FileSet, file *ast.File, fn *ast.FuncDecl, info *types.Info) bool {
-	modified := false
-	// Add import if necessary (only if we end up needing context). We'll ensure it below when needed too.
-	// Try to find existing context.Context parameter
-	if fn != nil && fn.Type != nil && fn.Type.Params != nil && info != nil {
-		for _, field := range fn.Type.Params.List {
-			if field == nil || field.Type == nil {
-				continue
+func ensureFuncHasCtxParam(fset *token.FileSet, file *ast.File, fn *ast.FuncDecl, info *types.Info, renameBlank bool) bool {
+	// Fast paths and guards
+	if fn == nil || fn.Type == nil {
+		return false
+	}
+	params := fn.Type.Params
+	if params == nil {
+		// No params at all: we will add one below
+		return addCtxParamAsFirst(fset, file, fn)
+	}
+
+	// If a parameter explicitly named ctx already exists, do not add another
+	if hasParamNamedCtx(params) {
+		return false
+	}
+
+	// Look for any context.Context parameter in existing list
+	for _, field := range params.List {
+		if field == nil || field.Type == nil || !isContextType(info, field.Type) {
+			continue
+		}
+		// Found a context parameter
+		if len(field.Names) > 0 {
+			// It's named
+			if field.Names[0].Name == "_" && renameBlank {
+				field.Names[0].Name = VarNameCtx
+				field.Names[0].NamePos = token.NoPos
+				ensureImport(fset, file, "context")
+				return true
 			}
-			t := info.TypeOf(field.Type)
-			if types.TypeString(t, func(p *types.Package) string { return p.Path() }) != ContextContext {
-				continue
+			// Already named (or rename not requested): nothing to do
+			return false
+		}
+		// Unnamed parameter of the right type: we can't reference it; conservatively add a named one in front.
+		return addCtxParamAsFirst(fset, file, fn)
+	}
+
+	// No suitable existing parameter found: add a new one.
+	return addCtxParamAsFirst(fset, file, fn)
+}
+
+// hasParamNamedCtx reports whether any parameter is named ctx.
+func hasParamNamedCtx(params *ast.FieldList) bool {
+	if params == nil {
+		return false
+	}
+	for _, field := range params.List {
+		for _, nm := range field.Names {
+			if nm != nil && nm.Name == VarNameCtx {
+				return true
 			}
-			// Found a context parameter
-			if len(field.Names) > 0 {
-				if field.Names[0].Name == "_" {
-					field.Names[0].Name = VarNameCtx
-					field.Names[0].NamePos = token.NoPos
-					modified = true
-					ensureImport(fset, file, "context")
-				}
-				// If it's already named (not underscore), nothing to do
-				return modified
-			}
-			// Unnamed parameter of the right type: we can't reference it; conservatively add a named one in front.
-			break
 		}
 	}
-	// No suitable existing parameter found: add a new one.
+	return false
+}
+
+// isContextType reports whether expr denotes context.Context, using types.Info when available
+// and falling back to a direct AST selector check.
+func isContextType(info *types.Info, expr ast.Expr) bool {
+	if expr == nil {
+		return false
+	}
+	if info != nil {
+		if t := info.TypeOf(expr); t != nil {
+			if types.TypeString(t, func(p *types.Package) string { return p.Path() }) == ContextContext {
+				return true
+			}
+		}
+	}
+	// Fallback: check for selector expression context.Context
+	if sel, ok := expr.(*ast.SelectorExpr); ok {
+		if xid, ok := sel.X.(*ast.Ident); ok && xid.Name == "context" && sel.Sel != nil && sel.Sel.Name == "Context" {
+			return true
+		}
+	}
+	return false
+}
+
+// addCtxParamAsFirst inserts a new first parameter "ctx context.Context" and normalizes positions.
+func addCtxParamAsFirst(fset *token.FileSet, file *ast.File, fn *ast.FuncDecl) bool {
 	ensureImport(fset, file, "context")
 	ctxField := &ast.Field{
 		Names: []*ast.Ident{ast.NewIdent(VarNameCtx)},
 		Type:  &ast.SelectorExpr{X: ast.NewIdent("context"), Sel: ast.NewIdent("Context")},
 	}
-	if fn != nil && fn.Type != nil {
-		if fn.Type.Params == nil {
-			fn.Type.Params = &ast.FieldList{List: []*ast.Field{ctxField}}
-		} else {
-			fn.Type.Params.List = append([]*ast.Field{ctxField}, fn.Type.Params.List...)
-		}
-		// Reset positions to let the formatter render without spurious trailing commas
-		fn.Type.Params.Opening = token.NoPos
-		fn.Type.Params.Closing = token.NoPos
-		for _, fld := range fn.Type.Params.List {
-			for _, nm := range fld.Names {
-				nm.NamePos = token.NoPos
-			}
+	if fn.Type.Params == nil {
+		fn.Type.Params = &ast.FieldList{List: []*ast.Field{ctxField}}
+	} else {
+		fn.Type.Params.List = append([]*ast.Field{ctxField}, fn.Type.Params.List...)
+	}
+	// Reset positions to let the formatter render without spurious trailing commas
+	fn.Type.Params.Opening = token.NoPos
+	fn.Type.Params.Closing = token.NoPos
+	for _, fld := range fn.Type.Params.List {
+		for _, nm := range fld.Names {
+			nm.NamePos = token.NoPos
 		}
 	}
-
 	return true
 }
 

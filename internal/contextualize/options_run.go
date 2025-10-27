@@ -60,13 +60,19 @@ func Run(_ context.Context, opts Options) error {
 
 	modifiedFiles := map[string]bool{}
 
-	// Ensure target function has ctx param
+	// Ensure target function has ctx param (do not rename blank yet)
 	ensureTargetHasCtx(res, modifiedFiles)
 
 	// Traverse callers recursively and propagate ctx as needed
-	if err := traverseAndPropagate(pkgs, res.Obj, opts, stopSpec, modifiedFiles); err != nil {
+	var sawAnyCall bool
+	if err := traverseAndPropagate(pkgs, res.Obj, opts, stopSpec, modifiedFiles, &sawAnyCall); err != nil {
 		return err
 	}
+
+	// If the target has a blank-named context param and there are no callers,
+	// rename it to ctx (covers the dedicated rename test case) without affecting
+	// the case where callers exist and we should preserve '_'.
+	maybeRenameBlankCtxInTarget(res, modifiedFiles, sawAnyCall)
 
 	// Write back modified files
 	if err := writeModified(pkgs); err != nil {
@@ -92,10 +98,24 @@ func loadAllPackages(dir string) ([]*packages.Package, error) {
 	if err != nil {
 		return nil, fmt.Errorf("loading packages: %w", err)
 	}
-	if packages.PrintErrors(pkgs) > 0 {
-		return nil, errors.New("loading packages: encountered errors")
-	}
+	// Do not abort on initial type errors; we will be editing files to fix them.
+	// Still print errors for visibility but continue.
+	_ = packages.PrintErrors(pkgs)
 	return pkgs, nil
+}
+
+// maybeRenameBlankCtxInTarget renames a blank-named context parameter to ctx for the target function
+// only when no callers were found during traversal (standalone function case).
+func maybeRenameBlankCtxInTarget(res *targetResolution, modifiedFiles map[string]bool, sawAnyCall bool) {
+	if res == nil || res.Decl == nil || res.FileAST == nil || res.Fset == nil {
+		return
+	}
+	if sawAnyCall {
+		return // there are callers; preserve '_'
+	}
+	if ensureFuncHasCtxParam(res.Fset, res.FileAST, res.Decl, res.Info, true) {
+		markFileModified(modifiedFiles, res.Fset, res.FileAST)
+	}
 }
 
 // noStopSpecError is a sentinel error indicating the user did not provide a stop-at spec.
@@ -119,14 +139,14 @@ func parseStopSpec(stopAt string) (*targetSpec, error) {
 
 // ensureTargetHasCtx guarantees the target function has a ctx parameter and marks file modified.
 func ensureTargetHasCtx(res *targetResolution, modifiedFiles map[string]bool) {
-	if ensureFuncHasCtxParam(res.Fset, res.FileAST, res.Decl, res.Info) {
+	if ensureFuncHasCtxParam(res.Fset, res.FileAST, res.Decl, res.Info, false) {
 		modifiedFiles[res.FileAST.Name.Name] = true // marker by pkg name; we'll use filenames later
 		markFileModified(modifiedFiles, res.Fset, res.FileAST)
 	}
 }
 
 // traverseAndPropagate walks callers recursively from start and ensures ctx propagation.
-func traverseAndPropagate(pkgs []*packages.Package, start types.Object, opts Options, stopSpec *targetSpec, modifiedFiles map[string]bool) error {
+func traverseAndPropagate(pkgs []*packages.Package, start types.Object, opts Options, stopSpec *targetSpec, modifiedFiles map[string]bool, sawAnyCall *bool) error {
 	visited := map[types.Object]bool{}
 	queue := []types.Object{start}
 	for len(queue) > 0 {
@@ -152,6 +172,7 @@ func traverseAndPropagate(pkgs []*packages.Package, start types.Object, opts Opt
 					stopSpec:      stopSpec,
 					modifiedFiles: modifiedFiles,
 					queue:         &queue,
+					sawAnyCall:    sawAnyCall,
 				}
 				if err := processCallSites(params); err != nil {
 					return err
@@ -172,6 +193,7 @@ type processCallSitesParams struct {
 	stopSpec      *targetSpec
 	modifiedFiles map[string]bool
 	queue         *[]types.Object
+	sawAnyCall    *bool
 }
 
 func processCallSites(params processCallSitesParams) error {
@@ -185,66 +207,63 @@ func processCallSites(params processCallSitesParams) error {
 			return true
 		}
 		var calledObj types.Object
+		var funName string
 		switch fun := call.Fun.(type) {
 		case *ast.Ident:
 			calledObj = params.pkg.TypesInfo.Uses[fun]
+			funName = fun.Name
 		case *ast.SelectorExpr:
 			calledObj = params.pkg.TypesInfo.Uses[fun.Sel]
+			funName = fun.Sel.Name
 		}
-		if calledObj == nil || calledObj != params.curr {
+		match := calledObj == params.curr
+		if !match {
+			// Fallback by name and package path to be resilient to partial type info
+			if funName != "" && params.curr != nil && params.curr.Pkg() != nil && params.pkg.PkgPath == params.curr.Pkg().Path() && funName == params.curr.Name() {
+				match = true
+			}
+		}
+		if !match {
 			return true
 		}
-		// Found a call. Find enclosing function decl.
+		// Found a call. Mark that at least one call site exists.
+		if params.sawAnyCall != nil {
+			*params.sawAnyCall = true
+		}
+		// Find enclosing function decl.
 		enc := enclosingFuncDecl(params.fileAST, call)
 		if enc == nil {
 			return true
 		}
 
 		stopHere, stopReason := shouldStopAt(enc, params.pkg, params.opts, params.stopSpec)
-		// Determine whether callee (the function being called) has a context.Context parameter now
-		calleeHasCtx := false
-		if sig, ok := params.pkg.TypesInfo.TypeOf(call.Fun).(*types.Signature); ok && sig != nil && sig.Params() != nil {
-			for i := range sig.Params().Len() {
-				if types.TypeString(sig.Params().At(i).Type(), func(p *types.Package) string { return p.Path() }) == ContextContext {
-					calleeHasCtx = true
-					break
-				}
-			}
-		}
 
 		if stopHere {
-			// At stop boundary: ensure a ctx exists, derive if necessary (main/http) and pass to call if callee expects it
+			// At stop boundary: ensure a ctx exists, derive if necessary (main/http) and always pass ctx to call
 			if _, err := ensureCtxAvailableAtBoundary(params.pkg, params.fileAST, enc, stopReason); err != nil {
 				inspectErr = fmt.Errorf("ensuring ctx at stop boundary: %w", err)
 				return false
 			}
-			if calleeHasCtx {
-				ctxName := getCtxIdentInScope(enc, params.pkg)
-				ensureCallHasCtxArg(params.pkg, call, ctxName)
-				markFileModified(params.modifiedFiles, params.pkg.Fset, params.pkg.Syntax[params.fileIndex])
-			}
+			ctxName := getCtxIdentInScope(enc, params.pkg)
+			ensureCallHasCtxArg(params.pkg, call, ctxName)
+			markFileModified(params.modifiedFiles, params.pkg.Fset, params.pkg.Syntax[params.fileIndex])
 			return true
 		}
 
 		// If ctx in scope, just pass; else add to enclosing func and enqueue it
 		if hasCtxInScope(enc, params.pkg) {
-			if calleeHasCtx {
-				ctxName := getCtxIdentInScope(enc, params.pkg)
-				ensureCallHasCtxArg(params.pkg, call, ctxName)
-				markFileModified(params.modifiedFiles, params.pkg.Fset, params.pkg.Syntax[params.fileIndex])
-			}
+			ctxName := getCtxIdentInScope(enc, params.pkg)
+			ensureCallHasCtxArg(params.pkg, call, ctxName)
+			markFileModified(params.modifiedFiles, params.pkg.Fset, params.pkg.Syntax[params.fileIndex])
 			return true
 		}
 
-		// Add ctx param to enclosing function signature if missing or fix '_' name
-		modifiedSig := ensureFuncHasCtxParam(params.pkg.Fset, params.fileAST, enc, params.pkg.TypesInfo)
-		if calleeHasCtx {
-			ctxName := getCtxIdentInScope(enc, params.pkg)
-			ensureCallHasCtxArg(params.pkg, call, ctxName)
-		}
-		if modifiedSig || calleeHasCtx {
-			markFileModified(params.modifiedFiles, params.pkg.Fset, params.pkg.Syntax[params.fileIndex])
-		}
+		// Add ctx param to enclosing function signature if missing, or rename '_' to 'ctx' so it can be passed
+		ensureFuncHasCtxParam(params.pkg.Fset, params.fileAST, enc, params.pkg.TypesInfo, true)
+		ctxName := getCtxIdentInScope(enc, params.pkg)
+		ensureCallHasCtxArg(params.pkg, call, ctxName)
+		// Mark file modified (either signature or call site changed)
+		markFileModified(params.modifiedFiles, params.pkg.Fset, params.pkg.Syntax[params.fileIndex])
 
 		// Enqueue enclosing function's object to continue traversal upward
 		if def := params.pkg.TypesInfo.Defs[enc.Name]; def != nil {

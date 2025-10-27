@@ -276,9 +276,12 @@ func getCtxIdentInScope(fn *ast.FuncDecl, pkg *packages.Package) string {
 		if obj == nil {
 			return true
 		}
-		if types.TypeString(obj.Type(), func(p *types.Package) string { return p.Path() }) == ContextContext {
-			found = id.Name
-			return false
+		// Only consider value identifiers (variables/params), ignore type names like the 'Context' in 'context.Context'.
+		if v, ok := obj.(*types.Var); ok {
+			if types.TypeString(v.Type(), func(p *types.Package) string { return p.Path() }) == ContextContext {
+				found = id.Name
+				return false
+			}
 		}
 		return true
 	})
