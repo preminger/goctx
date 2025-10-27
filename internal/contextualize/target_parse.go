@@ -1,6 +1,7 @@
 package contextualize
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"regexp"
@@ -20,7 +21,7 @@ func parseTargetSpec(s string) (targetSpec, error) {
 	s = filepath.ToSlash(strings.TrimSpace(s))
 	m := targetRe.FindStringSubmatch(s)
 	if m == nil {
-		return targetSpec{}, fmt.Errorf("invalid target format, want path/to/file.go:Func[:N]")
+		return targetSpec{}, errors.New("invalid target format, want path/to/file.go:Func[:N]")
 	}
 	ord := 0
 	if m[3] != "" {

@@ -1,7 +1,7 @@
 package contextualize
 
 import (
-	"fmt"
+	"errors"
 	"go/ast"
 	"go/token"
 	"go/types"
@@ -9,21 +9,28 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
+type StopReason int
+
+const (
+	StopReasonNone StopReason = iota
+	StopReasonMain
+	StopReasonHTTP
+	StopReasonStopAt
+)
+
 // shouldStopAt evaluates termination conditions for the given enclosing function.
 // Returns (true, reason) when we should not propagate further upward.
-func shouldStopAt(fn *ast.FuncDecl, p *packages.Package, opts Options, stopSpec *targetSpec) (bool, string) {
+func shouldStopAt(fn *ast.FuncDecl, p *packages.Package, opts Options, stopSpec *targetSpec) (bool, StopReason) {
 	// stop-at specific
 	if stopSpec != nil {
 		if sameFile(p, fn, stopSpec) && fn.Name.Name == stopSpec.FuncName {
-			if stopSpec.Ordinal > 0 {
-				// If ordinal was provided, ensure it matches
-				if idx := ordinalOfFuncInFile(p, fn, stopSpec); idx != stopSpec.Ordinal {
-					// not this one
-				} else {
-					return true, "stop-at"
-				}
-			} else {
-				return true, "stop-at"
+			if stopSpec.Ordinal < 1 {
+				return true, StopReasonStopAt
+			}
+
+			// If ordinal was provided, ensure it matches
+			if idx := ordinalOfFuncInFile(p, fn, stopSpec); idx == stopSpec.Ordinal {
+				return true, StopReasonStopAt
 			}
 		}
 	}
@@ -31,25 +38,25 @@ func shouldStopAt(fn *ast.FuncDecl, p *packages.Package, opts Options, stopSpec 
 	// html handler boundary
 	if opts.HTML {
 		if isHTTPHandlerFunc(fn, p) {
-			return true, "html"
+			return true, StopReasonHTTP
 		}
 	}
 
 	// main termination
 	if isMainFunction(fn, p) {
-		return true, "main"
+		return true, StopReasonMain
 	}
-	return false, ""
+	return false, StopReasonNone
 }
 
 func isMainFunction(fn *ast.FuncDecl, p *packages.Package) bool {
 	if fn == nil || fn.Recv != nil {
 		return false
 	}
-	if fn.Name.Name != "main" {
+	if fn.Name.Name != FuncNameMain {
 		return false
 	}
-	if p.PkgPath != "main" && p.Name != "main" {
+	if p.PkgPath != FuncNameMain && p.Name != FuncNameMain {
 		return false
 	}
 	return true
@@ -83,22 +90,22 @@ func isHTTPHandlerFunc(fn *ast.FuncDecl, p *packages.Package) bool {
 }
 
 // ensureCtxAvailableAtBoundary ensures that inside fn, a ctx variable exists.
-// If reason is "main": inserts ctx := context.Background() at top if not present.
-// If reason is "html": inserts ctx := <req>.Context() where <req> is the name of the *http.Request parameter.
-func ensureCtxAvailableAtBoundary(p *packages.Package, file *ast.File, fn *ast.FuncDecl, reason string) (bool, error) {
+// If reason is StopReasonMain: inserts ctx := context.Background() at top if not present.
+// If reason is OptNameHTTP: inserts ctx := <req>.Context() where <req> is the name of the *http.Request parameter.
+func ensureCtxAvailableAtBoundary(p *packages.Package, file *ast.File, fn *ast.FuncDecl, reason StopReason) (bool, error) {
 	if hasCtxInScope(fn, p) {
 		return true, nil
 	}
 	switch reason {
-	case "main":
+	case StopReasonMain:
 		ensureImport(file, "context")
 		stmt := makeAssignCtxBackground()
 		fn.Body.List = append([]ast.Stmt{stmt}, fn.Body.List...)
 		return true, nil
-	case "html":
+	case StopReasonHTTP:
 		reqName := findHTTPRequestParamName(fn, p)
 		if reqName == "" {
-			return false, fmt.Errorf("determining http request parameter name")
+			return false, errors.New("determining http request parameter name")
 		}
 		stmt := makeAssignCtxFromRequest(reqName)
 		fn.Body.List = append([]ast.Stmt{stmt}, fn.Body.List...)
@@ -111,7 +118,7 @@ func ensureCtxAvailableAtBoundary(p *packages.Package, file *ast.File, fn *ast.F
 func makeAssignCtxBackground() ast.Stmt {
 	// ctx := context.Background()
 	return &ast.AssignStmt{
-		Lhs: []ast.Expr{ast.NewIdent("ctx")},
+		Lhs: []ast.Expr{ast.NewIdent(VarNameCtx)},
 		Tok: token.DEFINE,
 		Rhs: []ast.Expr{&ast.SelectorExpr{X: ast.NewIdent("context"), Sel: ast.NewIdent("Background")}},
 	}
@@ -120,7 +127,7 @@ func makeAssignCtxBackground() ast.Stmt {
 func makeAssignCtxFromRequest(req string) ast.Stmt {
 	// ctx := <req>.Context()
 	return &ast.AssignStmt{
-		Lhs: []ast.Expr{ast.NewIdent("ctx")},
+		Lhs: []ast.Expr{ast.NewIdent(VarNameCtx)},
 		Tok: token.DEFINE,
 		Rhs: []ast.Expr{&ast.CallExpr{Fun: &ast.SelectorExpr{X: ast.NewIdent(req), Sel: ast.NewIdent("Context")}}},
 	}
@@ -152,14 +159,14 @@ func findHTTPRequestParamName(fn *ast.FuncDecl, p *packages.Package) string {
 
 func ensureCallHasCtxArg(_ *packages.Package, call *ast.CallExpr) {
 	// Prepend ctx ident to arguments
-	call.Args = append([]ast.Expr{ast.NewIdent("ctx")}, call.Args...)
+	call.Args = append([]ast.Expr{ast.NewIdent(VarNameCtx)}, call.Args...)
 }
 
 func hasCtxInScope(fn *ast.FuncDecl, p *packages.Package) bool {
 	found := false
 	ast.Inspect(fn, func(n ast.Node) bool {
 		id, ok := n.(*ast.Ident)
-		if !ok || id.Name != "ctx" {
+		if !ok || id.Name != VarNameCtx {
 			return true
 		}
 		// Check object type

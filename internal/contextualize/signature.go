@@ -15,7 +15,7 @@ func funcHasCtxParam(fn *ast.FuncDecl, info *types.Info) bool {
 	}
 	for _, field := range fn.Type.Params.List {
 		for _, name := range field.Names {
-			if name.Name == "ctx" {
+			if name.Name == VarNameCtx {
 				t := info.TypeOf(field.Type)
 				if types.TypeString(t, func(p *types.Package) string { return p.Path() }) == "context.Context" {
 					return true
@@ -26,12 +26,12 @@ func funcHasCtxParam(fn *ast.FuncDecl, info *types.Info) bool {
 	return false
 }
 
-func ensureFuncHasCtxParam(_ *token.FileSet, file *ast.File, fn *ast.FuncDecl) error {
+func ensureFuncHasCtxParam(_ *token.FileSet, file *ast.File, fn *ast.FuncDecl) {
 	// Add import if necessary
 	ensureImport(file, "context")
 	// Prepend parameter ctx context.Context
 	ctxField := &ast.Field{
-		Names: []*ast.Ident{ast.NewIdent("ctx")},
+		Names: []*ast.Ident{ast.NewIdent(VarNameCtx)},
 		Type:  &ast.SelectorExpr{X: ast.NewIdent("context"), Sel: ast.NewIdent("Context")},
 	}
 	if fn.Type.Params == nil {
@@ -39,7 +39,6 @@ func ensureFuncHasCtxParam(_ *token.FileSet, file *ast.File, fn *ast.FuncDecl) e
 	} else {
 		fn.Type.Params.List = append([]*ast.Field{ctxField}, fn.Type.Params.List...)
 	}
-	return nil
 }
 
 func ensureImport(file *ast.File, path string) {

@@ -33,15 +33,22 @@ func Run(_ context.Context, opts Options) error {
 	}
 	// Load all packages in the workspace
 	cfg := &packages.Config{
-		Mode: packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles | packages.NeedImports | packages.NeedDeps | packages.NeedTypes | packages.NeedTypesInfo | packages.NeedSyntax,
-		Dir:  firstNonEmpty(opts.WorkDir, "."),
+		Mode: packages.NeedName |
+			packages.NeedFiles |
+			packages.NeedCompiledGoFiles |
+			packages.NeedImports |
+			packages.NeedDeps |
+			packages.NeedTypes |
+			packages.NeedTypesInfo |
+			packages.NeedSyntax,
+		Dir: firstNonEmpty(opts.WorkDir, "."),
 	}
 	pkgs, err := packages.Load(cfg, "./...")
 	if err != nil {
 		return fmt.Errorf("loading packages: %w", err)
 	}
 	if packages.PrintErrors(pkgs) > 0 {
-		return fmt.Errorf("loading packages: encountered errors")
+		return errors.New("loading packages: encountered errors")
 	}
 
 	// Parse target and optional stopAt
@@ -68,9 +75,7 @@ func Run(_ context.Context, opts Options) error {
 
 	// Ensure target function has ctx param
 	if !funcHasCtxParam(res.Decl, res.Info) {
-		if err := ensureFuncHasCtxParam(res.Fset, res.FileAST, res.Decl); err != nil {
-			return fmt.Errorf("adding ctx param to target: %w", err)
-		}
+		ensureFuncHasCtxParam(res.Fset, res.FileAST, res.Decl)
 		modifiedFiles[res.FileAST.Name.Name] = true // marker by pkg name; we'll use filenames later
 		markFileModified(modifiedFiles, res.Fset, res.FileAST)
 	}
@@ -138,9 +143,7 @@ func Run(_ context.Context, opts Options) error {
 
 					// Add ctx param to enclosing function signature
 					if !funcHasCtxParam(enc, p.TypesInfo) {
-						if err := ensureFuncHasCtxParam(p.Fset, f, enc); err != nil {
-							panic(fmt.Errorf("adding ctx to caller: %w", err))
-						}
+						ensureFuncHasCtxParam(p.Fset, f, enc)
 					}
 					ensureCallHasCtxArg(p, call)
 					markFileModified(modifiedFiles, p.Fset, p.Syntax[i])
@@ -162,7 +165,7 @@ func Run(_ context.Context, opts Options) error {
 	return nil
 }
 
-// Helper: mark the concrete filename modified
+// Helper: mark the concrete filename modified.
 func markFileModified(mod map[string]bool, fset *token.FileSet, file *ast.File) {
 	if fset == nil || file == nil {
 		return
@@ -180,12 +183,12 @@ func writeModified(pkgs []*packages.Package) error {
 		for _, f := range p.Syntax {
 			filename := p.Fset.File(f.Pos()).Name()
 			var buf strings.Builder
-			cfg := &printer.Config{Mode: printer.TabIndent | printer.UseSpaces, Tabwidth: 8}
+			cfg := &printer.Config{Mode: printer.TabIndent}
 			if err := cfg.Fprint(&buf, p.Fset, f); err != nil {
 				return fmt.Errorf("printing file %s: %w", filename, err)
 			}
 			// Best-effort formatting already done; write file
-			if err := os.WriteFile(filename, []byte(buf.String()), 0o644); err != nil {
+			if err := os.WriteFile(filename, []byte(buf.String()), 0o644); err != nil { //nolint:gosec // This is an appropriate permissions setting for source-code files.
 				return fmt.Errorf("writing file %s: %w", filename, err)
 			}
 		}
@@ -193,7 +196,7 @@ func writeModified(pkgs []*packages.Package) error {
 	return nil
 }
 
-// Utility
+// Utility.
 func firstNonEmpty(vals ...string) string {
 	for _, v := range vals {
 		if strings.TrimSpace(v) != "" {
