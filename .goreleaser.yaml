@@ -13,7 +13,7 @@ before:
 
 builds:
   - id: goctx
-    main: ./cmd/contextualize
+    main: ./app/goctx
     binary: goctx
     flags:
       - -trimpath
