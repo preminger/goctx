@@ -60,13 +60,18 @@ func Run(_ context.Context, opts Options) error {
 
 	modifiedFiles := map[string]bool{}
 
+	// Decide if target already has a usable context.Context parameter (reuse case)
+	reuseExistingCtxInTarget := functionHasContextParam(res.Decl, res.Info)
+
 	// Ensure target function has ctx param (do not rename blank yet)
 	ensureTargetHasCtx(res, modifiedFiles)
 
-	// Traverse callers recursively and propagate ctx as needed
+	// Traverse callers recursively and propagate ctx as needed, unless the target already has a context parameter
 	var sawAnyCall bool
-	if err := traverseAndPropagate(pkgs, res.Obj, opts, stopSpec, modifiedFiles, &sawAnyCall); err != nil {
-		return err
+	if !reuseExistingCtxInTarget {
+		if err := traverseAndPropagate(pkgs, res.Obj, opts, stopSpec, modifiedFiles, &sawAnyCall); err != nil {
+			return err
+		}
 	}
 
 	// If the target has a blank-named context param and there are no callers,
@@ -250,7 +255,7 @@ func processCallSites(params processCallSitesParams) error {
 			return true
 		}
 
-		// If ctx in scope, just pass; else add to enclosing func and enqueue it
+		// If ctx in scope, just pass; do not enqueue since callers already pass their own context
 		if hasCtxInScope(enc, params.pkg) {
 			ctxName := getCtxIdentInScope(enc, params.pkg)
 			ensureCallHasCtxArg(params.pkg, call, ctxName)
@@ -258,16 +263,21 @@ func processCallSites(params processCallSitesParams) error {
 			return true
 		}
 
-		// Add ctx param to enclosing function signature if missing, or rename '_' to 'ctx' so it can be passed
+		// Determine whether the enclosing function already has a context parameter (possibly named "_")
+		hadCtxParam := functionHasContextParam(enc, params.pkg.TypesInfo)
+		// Ensure a usable ctx param exists (adds one if missing, or renames '_' to 'ctx')
 		ensureFuncHasCtxParam(params.pkg.Fset, params.fileAST, enc, params.pkg.TypesInfo, true)
 		ctxName := getCtxIdentInScope(enc, params.pkg)
 		ensureCallHasCtxArg(params.pkg, call, ctxName)
 		// Mark file modified (either signature or call site changed)
 		markFileModified(params.modifiedFiles, params.pkg.Fset, params.pkg.Syntax[params.fileIndex])
 
-		// Enqueue enclosing function's object to continue traversal upward
-		if def := params.pkg.TypesInfo.Defs[enc.Name]; def != nil {
-			*params.queue = append(*params.queue, def)
+		// Only enqueue if we had to ADD a brand new context parameter. If we are reusing an existing one,
+		// do not traverse further; callers of this function already pass their context argument.
+		if !hadCtxParam {
+			if def := params.pkg.TypesInfo.Defs[enc.Name]; def != nil {
+				*params.queue = append(*params.queue, def)
+			}
 		}
 		return true
 	})
@@ -312,4 +322,22 @@ func firstNonEmpty(vals ...string) string {
 		}
 	}
 	return ""
+}
+
+// functionHasContextParam reports whether the given function declaration already has
+// a parameter of type context.Context, regardless of its name. This influences whether
+// we need to traverse callers: when true, callers already pass the corresponding argument.
+func functionHasContextParam(fn *ast.FuncDecl, info *types.Info) bool {
+	if fn == nil || fn.Type == nil || fn.Type.Params == nil {
+		return false
+	}
+	for _, field := range fn.Type.Params.List {
+		if field == nil || field.Type == nil {
+			continue
+		}
+		if isContextType(info, field.Type) {
+			return true
+		}
+	}
+	return false
 }
