@@ -31,24 +31,11 @@ func Run(_ context.Context, opts Options) error {
 	if opts.Target == "" {
 		return errors.New("missing target argument")
 	}
+
 	// Load all packages in the workspace
-	cfg := &packages.Config{
-		Mode: packages.NeedName |
-			packages.NeedFiles |
-			packages.NeedCompiledGoFiles |
-			packages.NeedImports |
-			packages.NeedDeps |
-			packages.NeedTypes |
-			packages.NeedTypesInfo |
-			packages.NeedSyntax,
-		Dir: firstNonEmpty(opts.WorkDir, "."),
-	}
-	pkgs, err := packages.Load(cfg, "./...")
+	pkgs, err := loadAllPackages(firstNonEmpty(opts.WorkDir, "."))
 	if err != nil {
-		return fmt.Errorf("loading packages: %w", err)
-	}
-	if packages.PrintErrors(pkgs) > 0 {
-		return errors.New("loading packages: encountered errors")
+		return err
 	}
 
 	// Parse target and optional stopAt
@@ -56,13 +43,12 @@ func Run(_ context.Context, opts Options) error {
 	if err != nil {
 		return fmt.Errorf("parsing target: %w", err)
 	}
-	var stopSpec *targetSpec
-	if strings.TrimSpace(opts.StopAt) != "" {
-		ss, err := parseTargetSpec(opts.StopAt)
-		if err != nil {
-			return fmt.Errorf("parsing stop-at: %w", err)
+	stopSpec, err := parseStopSpec(opts.StopAt)
+	if err != nil {
+		var noStop noStopSpecError
+		if !errors.As(err, &noStop) {
+			return err
 		}
-		stopSpec = &ss
 	}
 
 	// Find the package and file for the target
@@ -74,16 +60,75 @@ func Run(_ context.Context, opts Options) error {
 	modifiedFiles := map[string]bool{}
 
 	// Ensure target function has ctx param
+	ensureTargetHasCtx(res, modifiedFiles)
+
+	// Traverse callers recursively and propagate ctx as needed
+	if err := traverseAndPropagate(pkgs, res.Obj, opts, stopSpec, modifiedFiles); err != nil {
+		return err
+	}
+
+	// Write back modified files
+	if err := writeModified(pkgs); err != nil {
+		return fmt.Errorf("writing modified files: %w", err)
+	}
+	return nil
+}
+
+// loadAllPackages loads all packages in the workspace rooted at dir.
+func loadAllPackages(dir string) ([]*packages.Package, error) {
+	cfg := &packages.Config{
+		Mode: packages.NeedName |
+			packages.NeedFiles |
+			packages.NeedCompiledGoFiles |
+			packages.NeedImports |
+			packages.NeedDeps |
+			packages.NeedTypes |
+			packages.NeedTypesInfo |
+			packages.NeedSyntax,
+		Dir: dir,
+	}
+	pkgs, err := packages.Load(cfg, "./...")
+	if err != nil {
+		return nil, fmt.Errorf("loading packages: %w", err)
+	}
+	if packages.PrintErrors(pkgs) > 0 {
+		return nil, errors.New("loading packages: encountered errors")
+	}
+	return pkgs, nil
+}
+
+// noStopSpecError is a sentinel error indicating the user did not provide a stop-at spec.
+// It allows callers to distinguish between "no spec provided" and real errors, avoiding nil-nil returns.
+type noStopSpecError struct{}
+
+func (noStopSpecError) Error() string { return "no stop-at spec provided" }
+
+// parseStopSpec parses the optional stop-at spec.
+// When no spec is provided (empty/whitespace), it returns (nil, noStopSpecError{}).
+func parseStopSpec(stopAt string) (*targetSpec, error) {
+	if strings.TrimSpace(stopAt) == "" {
+		return nil, noStopSpecError{}
+	}
+	ss, err := parseTargetSpec(stopAt)
+	if err != nil {
+		return nil, fmt.Errorf("parsing stop-at: %w", err)
+	}
+	return &ss, nil
+}
+
+// ensureTargetHasCtx guarantees the target function has a ctx parameter and marks file modified.
+func ensureTargetHasCtx(res *targetResolution, modifiedFiles map[string]bool) {
 	if !funcHasCtxParam(res.Decl, res.Info) {
 		ensureFuncHasCtxParam(res.Fset, res.FileAST, res.Decl)
 		modifiedFiles[res.FileAST.Name.Name] = true // marker by pkg name; we'll use filenames later
 		markFileModified(modifiedFiles, res.Fset, res.FileAST)
 	}
+}
 
-	// Traverse callers recursively
+// traverseAndPropagate walks callers recursively from start and ensures ctx propagation.
+func traverseAndPropagate(pkgs []*packages.Package, start types.Object, opts Options, stopSpec *targetSpec, modifiedFiles map[string]bool) error {
 	visited := map[types.Object]bool{}
-	queue := []types.Object{res.Obj}
-
+	queue := []types.Object{start}
 	for len(queue) > 0 {
 		curr := queue[0]
 		queue = queue[1:]
@@ -92,77 +137,102 @@ func Run(_ context.Context, opts Options) error {
 		}
 		visited[curr] = true
 
-		// Scan all packages/files for calls to curr
 		for _, pkg := range pkgs {
 			for fileIndex, fileAST := range pkg.Syntax {
 				fi := pkg.Fset.File(fileAST.Pos())
 				if fi == nil {
 					continue
 				}
-				ast.Inspect(fileAST, func(n ast.Node) bool {
-					call, ok := n.(*ast.CallExpr)
-					if !ok {
-						return true
-					}
-					var calledObj types.Object
-					switch fun := call.Fun.(type) {
-					case *ast.Ident:
-						calledObj = pkg.TypesInfo.Uses[fun]
-					case *ast.SelectorExpr:
-						calledObj = pkg.TypesInfo.Uses[fun.Sel]
-					}
-					if calledObj == nil || calledObj != curr {
-						return true
-					}
-					// Found a call. Find enclosing function decl.
-					enc := enclosingFuncDecl(fileAST, call)
-					if enc == nil {
-						return true
-					}
-
-					stopHere, stopReason := shouldStopAt(enc, pkg, opts, stopSpec)
-					if stopHere {
-						// At stop boundary: ensure a ctx exists, derive if necessary (main/http) and pass to call
-						ensured, err := ensureCtxAvailableAtBoundary(pkg, fileAST, enc, stopReason)
-						if err != nil {
-							// continue but report later? Simpler: fail fast
-							panic(fmt.Errorf("ensuring ctx at stop boundary: %w", err))
-						}
-						_ = ensured
-						ensureCallHasCtxArg(pkg, call)
-						markFileModified(modifiedFiles, pkg.Fset, pkg.Syntax[fileIndex])
-						return true
-					}
-
-					// If ctx in scope, just pass; else add to enclosing func and enqueue it
-					if hasCtxInScope(enc, pkg) {
-						ensureCallHasCtxArg(pkg, call)
-						markFileModified(modifiedFiles, pkg.Fset, pkg.Syntax[fileIndex])
-						return true
-					}
-
-					// Add ctx param to enclosing function signature
-					if !funcHasCtxParam(enc, pkg.TypesInfo) {
-						ensureFuncHasCtxParam(pkg.Fset, fileAST, enc)
-					}
-					ensureCallHasCtxArg(pkg, call)
-					markFileModified(modifiedFiles, pkg.Fset, pkg.Syntax[fileIndex])
-
-					// Enqueue enclosing function's object to continue traversal upward
-					if def := pkg.TypesInfo.Defs[enc.Name]; def != nil {
-						queue = append(queue, def)
-					}
-					return true
-				})
+				params := processCallSitesParams{
+					pkg:           pkg,
+					fileIndex:     fileIndex,
+					fileAST:       fileAST,
+					curr:          curr,
+					opts:          opts,
+					stopSpec:      stopSpec,
+					modifiedFiles: modifiedFiles,
+					queue:         &queue,
+				}
+				if err := processCallSites(params); err != nil {
+					return err
+				}
 			}
 		}
 	}
-
-	// Write back modified files
-	if err := writeModified(pkgs); err != nil {
-		return fmt.Errorf("writing modified files: %w", err)
-	}
 	return nil
+}
+
+// processCallSites scans a single file for calls to curr and performs required modifications.
+type processCallSitesParams struct {
+	pkg           *packages.Package
+	fileIndex     int
+	fileAST       *ast.File
+	curr          types.Object
+	opts          Options
+	stopSpec      *targetSpec
+	modifiedFiles map[string]bool
+	queue         *[]types.Object
+}
+
+func processCallSites(params processCallSitesParams) error {
+	var inspectErr error
+	ast.Inspect(params.fileAST, func(n ast.Node) bool {
+		if inspectErr != nil {
+			return false
+		}
+		call, ok := n.(*ast.CallExpr)
+		if !ok {
+			return true
+		}
+		var calledObj types.Object
+		switch fun := call.Fun.(type) {
+		case *ast.Ident:
+			calledObj = params.pkg.TypesInfo.Uses[fun]
+		case *ast.SelectorExpr:
+			calledObj = params.pkg.TypesInfo.Uses[fun.Sel]
+		}
+		if calledObj == nil || calledObj != params.curr {
+			return true
+		}
+		// Found a call. Find enclosing function decl.
+		enc := enclosingFuncDecl(params.fileAST, call)
+		if enc == nil {
+			return true
+		}
+
+		stopHere, stopReason := shouldStopAt(enc, params.pkg, params.opts, params.stopSpec)
+		if stopHere {
+			// At stop boundary: ensure a ctx exists, derive if necessary (main/http) and pass to call
+			if _, err := ensureCtxAvailableAtBoundary(params.pkg, params.fileAST, enc, stopReason); err != nil {
+				inspectErr = fmt.Errorf("ensuring ctx at stop boundary: %w", err)
+				return false
+			}
+			ensureCallHasCtxArg(params.pkg, call)
+			markFileModified(params.modifiedFiles, params.pkg.Fset, params.pkg.Syntax[params.fileIndex])
+			return true
+		}
+
+		// If ctx in scope, just pass; else add to enclosing func and enqueue it
+		if hasCtxInScope(enc, params.pkg) {
+			ensureCallHasCtxArg(params.pkg, call)
+			markFileModified(params.modifiedFiles, params.pkg.Fset, params.pkg.Syntax[params.fileIndex])
+			return true
+		}
+
+		// Add ctx param to enclosing function signature if missing
+		if !funcHasCtxParam(enc, params.pkg.TypesInfo) {
+			ensureFuncHasCtxParam(params.pkg.Fset, params.fileAST, enc)
+		}
+		ensureCallHasCtxArg(params.pkg, call)
+		markFileModified(params.modifiedFiles, params.pkg.Fset, params.pkg.Syntax[params.fileIndex])
+
+		// Enqueue enclosing function's object to continue traversal upward
+		if def := params.pkg.TypesInfo.Defs[enc.Name]; def != nil {
+			*params.queue = append(*params.queue, def)
+		}
+		return true
+	})
+	return inspectErr
 }
 
 // Helper: mark the concrete filename modified.
