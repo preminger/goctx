@@ -204,8 +204,8 @@ func processCallSites(params processCallSitesParams) error {
 		// Determine whether callee (the function being called) has a context.Context parameter now
 		calleeHasCtx := false
 		if sig, ok := params.pkg.TypesInfo.TypeOf(call.Fun).(*types.Signature); ok && sig != nil && sig.Params() != nil {
-			for i := 0; i < sig.Params().Len(); i++ {
-				if types.TypeString(sig.Params().At(i).Type(), func(p *types.Package) string { return p.Path() }) == "context.Context" {
+			for i := range sig.Params().Len() {
+				if types.TypeString(sig.Params().At(i).Type(), func(p *types.Package) string { return p.Path() }) == ContextContext {
 					calleeHasCtx = true
 					break
 				}
@@ -237,13 +237,7 @@ func processCallSites(params processCallSitesParams) error {
 		}
 
 		// Add ctx param to enclosing function signature if missing or fix '_' name
-		modifiedSig := false
-		if !funcHasCtxParam(enc, params.pkg.TypesInfo) {
-			modifiedSig = ensureFuncHasCtxParam(params.pkg.Fset, params.fileAST, enc, params.pkg.TypesInfo)
-		} else {
-			// Still try to normalize '_' to 'ctx' if present
-			modifiedSig = ensureFuncHasCtxParam(params.pkg.Fset, params.fileAST, enc, params.pkg.TypesInfo)
-		}
+		modifiedSig := ensureFuncHasCtxParam(params.pkg.Fset, params.fileAST, enc, params.pkg.TypesInfo)
 		if calleeHasCtx {
 			ctxName := getCtxIdentInScope(enc, params.pkg)
 			ensureCallHasCtxArg(params.pkg, call, ctxName)

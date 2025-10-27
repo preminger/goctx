@@ -251,7 +251,7 @@ func getCtxIdentInScope(fn *ast.FuncDecl, pkg *packages.Package) string {
 				continue
 			}
 			t := pkg.TypesInfo.TypeOf(field.Type)
-			if types.TypeString(t, func(p *types.Package) string { return p.Path() }) != "context.Context" {
+			if types.TypeString(t, func(p *types.Package) string { return p.Path() }) != ContextContext {
 				continue
 			}
 			if len(field.Names) > 0 {
@@ -276,7 +276,7 @@ func getCtxIdentInScope(fn *ast.FuncDecl, pkg *packages.Package) string {
 		if obj == nil {
 			return true
 		}
-		if types.TypeString(obj.Type(), func(p *types.Package) string { return p.Path() }) == "context.Context" {
+		if types.TypeString(obj.Type(), func(p *types.Package) string { return p.Path() }) == ContextContext {
 			found = id.Name
 			return false
 		}

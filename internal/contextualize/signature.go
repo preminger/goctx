@@ -10,24 +10,6 @@ import (
 	"golang.org/x/tools/go/ast/astutil"
 )
 
-func funcHasCtxParam(fn *ast.FuncDecl, info *types.Info) bool {
-	if fn == nil || fn.Type == nil || fn.Type.Params == nil {
-		return false
-	}
-	for _, field := range fn.Type.Params.List {
-		if field == nil || field.Type == nil {
-			continue
-		}
-		t := info.TypeOf(field.Type)
-		if types.TypeString(t, func(p *types.Package) string { return p.Path() }) != "context.Context" {
-			continue
-		}
-		// Found a context.Context parameter regardless of its name (could be unnamed or named differently)
-		return true
-	}
-	return false
-}
-
 // ensureFuncHasCtxParam ensures the function has a usable context.Context parameter.
 // Behavior:
 // - If there's a parameter of type context.Context named "_", rename it to "ctx".
@@ -44,7 +26,7 @@ func ensureFuncHasCtxParam(fset *token.FileSet, file *ast.File, fn *ast.FuncDecl
 				continue
 			}
 			t := info.TypeOf(field.Type)
-			if types.TypeString(t, func(p *types.Package) string { return p.Path() }) != "context.Context" {
+			if types.TypeString(t, func(p *types.Package) string { return p.Path() }) != ContextContext {
 				continue
 			}
 			// Found a context parameter
