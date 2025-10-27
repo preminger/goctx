@@ -10,9 +10,9 @@ import (
 )
 
 type targetSpec struct {
-	File     string
-	FuncName string
-	Ordinal  int // 1-based; 0 means unspecified
+	File       string
+	FuncName   string
+	LineNumber int // Interpreted as 1-based line number when provided; 0 means unspecified
 }
 
 var targetRe = regexp.MustCompile(`^([^:]+):(\w+)(?::(\d+))?$`)
@@ -27,9 +27,10 @@ func parseTargetSpec(specStr string) (targetSpec, error) {
 	if matches[3] != "" {
 		v, err := strconv.Atoi(matches[3])
 		if err != nil || v <= 0 {
-			return targetSpec{}, fmt.Errorf("invalid ordinal N in %q", specStr)
+			return targetSpec{}, fmt.Errorf("invalid line number N in %q", specStr)
 		}
 		ord = v
 	}
-	return targetSpec{File: matches[1], FuncName: matches[2], Ordinal: ord}, nil
+
+	return targetSpec{File: matches[1], FuncName: matches[2], LineNumber: ord}, nil
 }

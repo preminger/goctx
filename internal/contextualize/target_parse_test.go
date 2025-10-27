@@ -10,7 +10,7 @@ func TestParseTargetSpec_OK(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if sp.File != filepath.ToSlash("pkg/foo.go") || sp.FuncName != "DoThing" || sp.Ordinal != 0 {
+	if sp.File != filepath.ToSlash("pkg/foo.go") || sp.FuncName != "DoThing" || sp.LineNumber != 0 {
 		t.Fatalf("unexpected spec: %+v", sp)
 	}
 
@@ -21,10 +21,10 @@ func TestParseTargetSpec_OK(t *testing.T) {
 		// should not error
 	}
 	if err != nil {
-		t.Fatalf("unexpected error with ordinal: %v", err)
+		t.Fatalf("unexpected error with line-number: %v", err)
 	}
-	if sp.Ordinal != 2 {
-		t.Fatalf("expected ordinal 2, got %d", sp.Ordinal)
+	if sp.LineNumber != 2 {
+		t.Fatalf("expected line-number 2, got %d", sp.LineNumber)
 	}
 }
 
@@ -36,7 +36,7 @@ func TestParseTargetSpec_Errors(t *testing.T) {
 		t.Fatalf("expected error for missing function name")
 	}
 	if _, err := parseTargetSpec("pkg/foo.go:Func:0"); err == nil {
-		t.Fatalf("expected error for zero ordinal")
+		t.Fatalf("expected error for zero line-number")
 	}
 	if _, err := parseTargetSpec("notvalid"); err == nil {
 		t.Fatalf("expected error for invalid format")

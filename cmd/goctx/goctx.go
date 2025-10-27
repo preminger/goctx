@@ -9,9 +9,25 @@ import (
 
 func NewRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:   "contextualize <path/to/file.go:FuncName[:N]>",
+		Use:   "contextualize TARGET",
 		Short: "Propagate context.Context through Go call graphs",
-		Args:  cobra.ExactArgs(1),
+		Long: `Propagate context.Context through Go call graphs.
+
+TARGET is of the form:
+  path/to/file.go:FuncName[:N]
+
+Where N is the 1-based line number of the function/method declaration.
+If you omit N and multiple functions with the same name exist in the file,
+resolution is ambiguous and the tool will ask you to disambiguate by line number.`,
+		Example: `  # Target a function by name
+  contextualize ./pkg/foo.go:DoThing
+
+  # Disambiguate by 1-based line number of the declaration
+  contextualize ./pkg/foo.go:DoThing:42
+
+  # Stop propagation at another function (also supports :N)
+  contextualize --stop-at ./pkg/stop.go:Boundary ./pkg/foo.go:DoThing`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			stopAt, err := cmd.Flags().GetString(OptNameStopAt)
 			if err != nil {
@@ -35,5 +51,6 @@ func NewRootCmd() *cobra.Command {
 			return nil
 		},
 	}
+
 	return rootCmd
 }

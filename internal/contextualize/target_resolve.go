@@ -53,21 +53,35 @@ func resolveTarget(pkgs []*packages.Package, spec targetSpec) (*targetResolution
 			}
 			candidates := findFuncDeclsByName(fileAST, spec.FuncName)
 			if len(candidates) == 0 {
-				return nil, fmt.Errorf("no function named %s in %s", spec.FuncName, spec.File)
+				return nil, fmt.Errorf("no function or method named %s in %s", spec.FuncName, spec.File)
 			}
+			// If a line number was provided, pick the function starting at that line
+			if spec.LineNumber > 0 {
+				var decl *ast.FuncDecl
+				for _, c := range candidates {
+					start := pkg.Fset.Position(c.Pos()).Line
+					if start == spec.LineNumber {
+						decl = c
+						break
+					}
+				}
+				if decl == nil {
+					return nil, fmt.Errorf("no %s starting at line %d in %s", spec.FuncName, spec.LineNumber, spec.File)
+				}
+				obj := pkg.TypesInfo.Defs[decl.Name]
+				if obj == nil {
+					return nil, fmt.Errorf("resolving function object for %s", spec.FuncName)
+				}
+				return &targetResolution{Pkg: pkg, FileAST: fileAST, Fset: pkg.Fset, Info: pkg.TypesInfo, Decl: decl, Obj: obj}, nil
+			}
+			// No line provided
 			if len(candidates) > 1 {
-				if spec.Ordinal == 0 {
-					return nil, fmt.Errorf("ambiguous function %s in %s: found %d; please specify as %s:%s:N", spec.FuncName, spec.File, len(candidates), spec.File, spec.FuncName)
-				}
-				if spec.Ordinal < 1 || spec.Ordinal > len(candidates) {
-					return nil, fmt.Errorf("invalid ordinal N=%d for %s in %s (have %d)", spec.Ordinal, spec.FuncName, spec.File, len(candidates))
-				}
+				return nil, fmt.Errorf(
+					"ambiguous function %s in %s: found %d; please disambiguate using a line number as %s:%s:N (N is 1-based line)",
+					spec.FuncName, spec.File, len(candidates), spec.File, spec.FuncName,
+				)
 			}
-			idx := spec.Ordinal
-			if idx == 0 {
-				idx = 1
-			}
-			decl := candidates[idx-1]
+			decl := candidates[0]
 			obj := pkg.TypesInfo.Defs[decl.Name]
 			if obj == nil {
 				return nil, fmt.Errorf("resolving function object for %s", spec.FuncName)
@@ -75,6 +89,7 @@ func resolveTarget(pkgs []*packages.Package, spec targetSpec) (*targetResolution
 			return &targetResolution{Pkg: pkg, FileAST: fileAST, Fset: pkg.Fset, Info: pkg.TypesInfo, Decl: decl, Obj: obj}, nil
 		}
 	}
+
 	return nil, fmt.Errorf("could not find file %s in loaded packages", spec.File)
 }
 
@@ -89,6 +104,7 @@ func findFuncDeclsByName(file *ast.File, name string) []*ast.FuncDecl {
 			out = append(out, fd)
 		}
 	}
+
 	return out
 }
 
@@ -111,37 +127,6 @@ func sameFile(p *packages.Package, fn *ast.FuncDecl, spec *targetSpec) bool {
 	}
 
 	return abs1 == abs2
-}
-
-func ordinalOfFuncInFile(pkg *packages.Package, fn *ast.FuncDecl, spec *targetSpec) int {
-	fi := pkg.Fset.File(fn.Pos())
-	if fi == nil {
-		return 0
-	}
-	var idx int
-	ast.Inspect(getFileForPos(pkg, fn), func(n ast.Node) bool {
-		fd, ok := n.(*ast.FuncDecl)
-		if !ok {
-			return true
-		}
-		if fd.Name.Name == spec.FuncName {
-			idx++
-			if fd == fn {
-				return false
-			}
-		}
-		return true
-	})
-	return idx
-}
-
-func getFileForPos(p *packages.Package, node ast.Node) *ast.File {
-	for _, f := range p.Syntax {
-		if f.Pos() <= node.Pos() && node.Pos() <= f.End() {
-			return f
-		}
-	}
-	return nil
 }
 
 func enclosingFuncDecl(file *ast.File, targetNode ast.Node) *ast.FuncDecl {
@@ -170,5 +155,6 @@ func enclosingFuncDecl(file *ast.File, targetNode ast.Node) *ast.FuncDecl {
 		}
 		return true
 	})
+
 	return found
 }

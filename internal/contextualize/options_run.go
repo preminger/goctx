@@ -83,6 +83,7 @@ func Run(_ context.Context, opts Options) error {
 	if err := writeModified(pkgs); err != nil {
 		return fmt.Errorf("writing modified files: %w", err)
 	}
+
 	return nil
 }
 
@@ -106,6 +107,7 @@ func loadAllPackages(dir string) ([]*packages.Package, error) {
 	// Do not abort on initial type errors; we will be editing files to fix them.
 	// Still print errors for visibility but continue.
 	_ = packages.PrintErrors(pkgs)
+
 	return pkgs, nil
 }
 
@@ -139,6 +141,7 @@ func parseStopSpec(stopAt string) (*targetSpec, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parsing stop-at: %w", err)
 	}
+
 	return &ss, nil
 }
 
@@ -185,6 +188,7 @@ func traverseAndPropagate(pkgs []*packages.Package, start types.Object, opts Opt
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -281,6 +285,7 @@ func processCallSites(params processCallSitesParams) error {
 		}
 		return true
 	})
+
 	return inspectErr
 }
 
@@ -311,6 +316,7 @@ func writeModified(pkgs []*packages.Package) error {
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -321,6 +327,7 @@ func firstNonEmpty(vals ...string) string {
 			return v
 		}
 	}
+
 	return ""
 }
 
@@ -339,5 +346,6 @@ func functionHasContextParam(fn *ast.FuncDecl, info *types.Info) bool {
 			return true
 		}
 	}
+
 	return false
 }

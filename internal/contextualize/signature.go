@@ -54,6 +54,7 @@ func ensureFuncHasCtxParam(fset *token.FileSet, file *ast.File, fn *ast.FuncDecl
 	}
 
 	// No suitable existing parameter found: add a new one.
+
 	return addCtxParamAsFirst(fset, file, fn)
 }
 
@@ -69,6 +70,7 @@ func hasParamNamedCtx(params *ast.FieldList) bool {
 			}
 		}
 	}
+
 	return false
 }
 
@@ -91,6 +93,7 @@ func isContextType(info *types.Info, expr ast.Expr) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -114,6 +117,7 @@ func addCtxParamAsFirst(fset *token.FileSet, file *ast.File, fn *ast.FuncDecl) b
 			nm.NamePos = token.NoPos
 		}
 	}
+
 	return true
 }
 

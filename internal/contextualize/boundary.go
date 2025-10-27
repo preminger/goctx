@@ -24,12 +24,13 @@ func shouldStopAt(funcDecl *ast.FuncDecl, pkg *packages.Package, opts Options, s
 	// stop-at specific
 	if stopSpec != nil {
 		if sameFile(pkg, funcDecl, stopSpec) && funcDecl.Name.Name == stopSpec.FuncName {
-			if stopSpec.Ordinal < 1 {
+			// If no line number was provided, any matching function name in the file qualifies
+			if stopSpec.LineNumber < 1 {
 				return true, StopReasonStopAt
 			}
-
-			// If ordinal was provided, ensure it matches
-			if idx := ordinalOfFuncInFile(pkg, funcDecl, stopSpec); idx == stopSpec.Ordinal {
+			// When a line number was provided, ensure it matches the function's starting line
+			start := pkg.Fset.Position(funcDecl.Pos()).Line
+			if start == stopSpec.LineNumber {
 				return true, StopReasonStopAt
 			}
 		}
@@ -46,6 +47,7 @@ func shouldStopAt(funcDecl *ast.FuncDecl, pkg *packages.Package, opts Options, s
 	if isMainFunction(funcDecl, pkg) {
 		return true, StopReasonMain
 	}
+
 	return false, StopReasonNone
 }
 
@@ -59,6 +61,7 @@ func isMainFunction(fn *ast.FuncDecl, pkg *packages.Package) bool {
 	if pkg.PkgPath != FuncNameMain && pkg.Name != FuncNameMain {
 		return false
 	}
+
 	return true
 }
 
@@ -86,6 +89,7 @@ func isHTTPHandlerFunc(fn *ast.FuncDecl, pkg *packages.Package) bool {
 	if namedType.Obj().Name() == "Request" && namedType.Obj().Pkg().Path() == "net/http" {
 		return true
 	}
+
 	return false
 }
 
@@ -199,6 +203,7 @@ func makeAssignCtxBackground() ast.Stmt {
 		Tok: token.DEFINE,
 		Rhs: []ast.Expr{&ast.CallExpr{Fun: &ast.SelectorExpr{X: ast.NewIdent("context"), Sel: ast.NewIdent("Background")}}},
 	}
+
 	return assign
 }
 
@@ -232,6 +237,7 @@ func findHTTPRequestParamName(fn *ast.FuncDecl, p *packages.Package) string {
 			return "req"
 		}
 	}
+
 	return ""
 }
 
@@ -285,6 +291,7 @@ func getCtxIdentInScope(fn *ast.FuncDecl, pkg *packages.Package) string {
 		}
 		return true
 	})
+
 	return found
 }
 
