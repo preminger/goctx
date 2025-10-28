@@ -10,6 +10,12 @@ Now there is.
 
 ### Example
 
+#### Command-line
+
+```shell
+goctx ./main.go:target
+```
+
 #### Before
 
 ```go
@@ -17,10 +23,10 @@ package main
 
 import "context"
 
-func target() {}
+func targetFunc() {}
 
 func funcOne() {
-	target()
+	targetFunc()
 }
 
 func funcTwo() {
@@ -58,10 +64,10 @@ package main
 
 import "context"
 
-func target(ctx context.Context) {}
+func targetFunc(ctx context.Context) {}
 
 func funcOne(ctx context.Context) {
-	target(ctx)
+	targetFunc(ctx)
 }
 
 func funcTwo(ctx context.Context) {

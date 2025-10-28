@@ -217,7 +217,7 @@ func TestE2E_BigExample(t *testing.T) {
 	ctx := t.Context()
 	g := goldie.New(t, goldie.WithFixtureDir(fixturesDir(t)))
 	dir := writeTempModuleFromInput(t, "e2e_big_example")
-	target := filepath.Join(dir, "main.go") + ":target"
+	target := filepath.Join(dir, "main.go") + ":targetFunc"
 	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
 		t.Fatalf("Run error: %v", err)
 	}
