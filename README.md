@@ -1,5 +1,99 @@
 # goctx
 
+## tl;dr
+
+"I'm in a function 10 calls deep from the closest `context.Context` object, and I suddenly find myself in need of a context; I know that calling `context.Background()` deep in my call stack is a no-no, and `context.TODO()` just kicks the can down the road. Is there a tool out there that can just automagically add all the necessary `context.Context` function/method parameter plumbing for me?"
+
+Now there is.
+
+(It also handles existing unused context parameters - i.e., `_ context.Context` - intelligently by just renaming them instead of adding a new parameter, and also reuses existing `context.Context` parameters that are not named `ctx`, if present.)
+
+### Example
+
+#### Before
+
+```go
+package main
+
+import "context"
+
+func target() {}
+
+func funcOne() {
+	target()
+}
+
+func funcTwo() {
+	funcOne()
+}
+
+func funcThreeA(_ context.Context) {
+	funcTwo()
+}
+
+func funcThreeB() {
+	funcOne()
+}
+
+func funcThreeC(myWeirdlyNamedCtx context.Context) {
+	funcTwo()
+}
+
+func funcFour() {
+	funcThreeB()
+}
+
+func main() {
+	ctx := context.Background()
+	funcFour()
+	funcThreeA(ctx)
+	funcThreeC(ctx)
+}
+```
+
+#### After
+
+```go
+package main
+
+import "context"
+
+func target(ctx context.Context) {}
+
+func funcOne(ctx context.Context) {
+	target(ctx)
+}
+
+func funcTwo(ctx context.Context) {
+	funcOne(ctx)
+}
+
+func funcThreeA(ctx context.Context) {
+	funcTwo(ctx)
+}
+
+func funcThreeB(ctx context.Context) {
+	funcOne(ctx)
+}
+
+func funcThreeC(myWeirdlyNamedCtx context.Context) {
+	funcTwo(myWeirdlyNamedCtx)
+}
+
+func funcFour(ctx context.Context) {
+	funcThreeB(ctx)
+}
+
+func main() {
+	ctx := context.Background()
+	funcFour(ctx)
+	funcThreeA(ctx)
+	funcThreeC(ctx)
+}
+```
+
+## Description
+
 Propagate `context.Context` through Go call graphs automatically.
 
 This tool analyzes your Go source, ensures a `context.Context` parameter exists where needed, and propagates it through call chains by updating function signatures and call sites. It can also stop at well-defined boundaries such as `http.HandlerFunc`, deriving the context from `req.Context()`.

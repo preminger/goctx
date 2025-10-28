@@ -1,0 +1,36 @@
+package main
+
+import "context"
+
+func target(ctx context.Context) {}
+
+func funcOne(ctx context.Context) {
+	target(ctx)
+}
+
+func funcTwo(ctx context.Context) {
+	funcOne(ctx)
+}
+
+func funcThreeA(ctx context.Context) {
+	funcTwo(ctx)
+}
+
+func funcThreeB(ctx context.Context) {
+	funcOne(ctx)
+}
+
+func funcThreeC(myWeirdlyNamedCtx context.Context) {
+	funcTwo(myWeirdlyNamedCtx)
+}
+
+func funcFour(ctx context.Context) {
+	funcThreeB(ctx)
+}
+
+func main() {
+	ctx := context.Background()
+	funcFour(ctx)
+	funcThreeA(ctx)
+	funcThreeC(ctx)
+}

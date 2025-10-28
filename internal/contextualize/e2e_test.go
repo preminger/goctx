@@ -212,3 +212,18 @@ func copyDir(t *testing.T, src, dst string) error {
 		return os.WriteFile(target, data, 0o644)
 	})
 }
+
+func TestE2E_BigExample(t *testing.T) {
+	ctx := t.Context()
+	g := goldie.New(t, goldie.WithFixtureDir(fixturesDir(t)))
+	dir := writeTempModuleFromInput(t, "e2e_big_example")
+	target := filepath.Join(dir, "main.go") + ":target"
+	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+	b, err := os.ReadFile(filepath.Join(dir, "main.go"))
+	if err != nil {
+		t.Fatalf("read main.go: %v", err)
+	}
+	g.Assert(t, "e2e_big_example_main_go", []byte(normalizeNewlines(string(b))))
+}
