@@ -2,10 +2,10 @@ package main
 
 import "context"
 
-func target(ctx context.Context) {}
+func targetFunc(ctx context.Context) {}
 
 func funcOne(ctx context.Context) {
-	target(ctx)
+	targetFunc(ctx)
 }
 
 func funcTwo(ctx context.Context) {
