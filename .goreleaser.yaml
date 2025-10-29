@@ -58,11 +58,18 @@ changelog:
       - '^chore:'
       - '^test:'
 
-brews:
+homebrew:
   - name: goctx
     ids:
       - goctx
-    repository:
+    # Restrict to the OS/ARCH combos we actually build to avoid archive lookup errors.
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    tap:
       owner: preminger
       name: homebrew-tap
     commit_author:
@@ -70,7 +77,7 @@ brews:
       email: 41898282+github-actions[bot]@users.noreply.github.com
     homepage: "https://github.com/preminger/goctx"
     description: "Propagate context.Context through Go call graphs automatically."
-    license: "Apache 2.0"
+    license: "MIT"
     test: |
       system "#{bin}/goctx", "version"
 
