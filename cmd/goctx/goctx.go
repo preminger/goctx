@@ -3,7 +3,7 @@ package goctx
 import (
 	"fmt"
 
-	"github.com/example/contextualize/internal/contextualize"
+	"github.com/preminger/goctx/internal/contextualize"
 	"github.com/spf13/cobra"
 )
 
