@@ -119,11 +119,30 @@ This tool analyzes your Go source, ensures a `context.Context` parameter exists 
 
 ## Installation
 
-You can install the CLI with a regular `go install` or build from source.
+You can install the CLI via Homebrew, with `go install`, or build from source.
+
+- Homebrew (recommended for macOS/Linux):
+
+  Option A: tap once, then install/update normally:
+
+  ```shell
+  brew tap preminger/tap
+  brew install goctx
+  # later updates
+  brew upgrade goctx
+  ```
+
+  Option B: install directly from the tap without adding it globally:
+
+  ```shell
+  brew install preminger/tap/goctx
+  ```
 
 - Latest version using `go install`:
 
+  ```shell
   go install github.com/preminger/goctx/app/goctx@latest
+  ```
 
   This will install a `goctx` binary in your `GOBIN` (or `$GOPATH/bin`).
 
@@ -133,7 +152,7 @@ You can install the CLI with a regular `go install` or build from source.
 
     ```shell
     go build -o bin/goctx ./app/goctx
-    ````
+    ```
 
   - Using the provided Makefile and GoReleaser (snapshot build):
 
