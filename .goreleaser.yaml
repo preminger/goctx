@@ -61,13 +61,13 @@ changelog:
 brews:
   - name: goctx
     ids:
-      - goctx
+      - default
     repository:
       owner: preminger
       name: homebrew-tap
     commit_author:
-      name: github-actions[bot]
-      email: 41898282+github-actions[bot]@users.noreply.github.com
+      name: Omer Preminger
+      email: omer@preminger.xyz
     homepage: "https://github.com/preminger/goctx"
     description: "Propagate context.Context through Go call graphs automatically."
     license: "Apache 2.0"
