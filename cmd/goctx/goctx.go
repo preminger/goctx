@@ -1,13 +1,14 @@
 package goctx
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/preminger/goctx/internal/contextualize"
 	"github.com/spf13/cobra"
 )
 
-func NewRootCmd() *cobra.Command {
+func NewRootCmd(ctx context.Context) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "contextualize TARGET",
 		Short: "Propagate context.Context through Go call graphs",
@@ -51,6 +52,9 @@ resolution is ambiguous and the tool will ask you to disambiguate by line number
 			return nil
 		},
 	}
+
+	// Subcommands
+	rootCmd.AddCommand(NewVersionCmd(ctx))
 
 	return rootCmd
 }
