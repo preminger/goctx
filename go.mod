@@ -1,4 +1,4 @@
-module github.com/example/contextualize
+module github.com/preminger/goctx
 
 go 1.25.3
 

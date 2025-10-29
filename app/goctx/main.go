@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/example/contextualize/cmd/goctx"
+	"github.com/preminger/goctx/cmd/goctx"
 )
 
 func main() {
