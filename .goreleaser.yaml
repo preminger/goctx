@@ -62,17 +62,19 @@ publishers:
   - name: homebrew
     ids:
       - goctx
-    tap:
-      owner: preminger
-      name: homebrew-tap
-    commit_author:
-      name: github-actions[bot]
-      email: 41898282+github-actions[bot]@users.noreply.github.com
-    homepage: "https://github.com/preminger/goctx"
-    description: "Propagate context.Context through Go call graphs automatically."
-    license: "Apache-2.0"
-    test: |
-      system "#{bin}/goctx", "version"
+    with:
+      formula_name: goctx
+      tap:
+        owner: preminger
+        name: homebrew-tap
+      commit_author:
+        name: github-actions[bot]
+        email: 41898282+github-actions[bot]@users.noreply.github.com
+      homepage: "https://github.com/preminger/goctx"
+      description: "Propagate context.Context through Go call graphs automatically."
+      license: "Apache-2.0"
+      test: |
+        system "#{bin}/goctx", "version"
 
 release:
   # By default, GoReleaser infers GitHub/GitLab repo from the git remote.
