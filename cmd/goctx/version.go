@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"os/exec"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -33,26 +32,23 @@ var BuildDate = "" //nolint:gochecknoglobals // Populated by goreleaser ldflags.
 // EffectiveVersion returns the best-effort version string for the binary.
 // Precedence:
 //  1. If Version was set via -ldflags and is not "dev"/empty, use it as-is.
-//  2. If running inside a Git worktree and `git describe --tags --dirty --always`
-//     succeeds, use that value.
-//  3. Fallback to Go build info (vcs.revision).
+//  2. If built via `go install module@version`, use Go build info `Main.Version`.
+//  3. Fallback to Go build info `vcs.revision` (+ "-dirty" if `vcs.modified=true`).
 //  4. Finally, return "dev".
-func EffectiveVersion(ctx context.Context) string {
+func EffectiveVersion(_ context.Context) string {
 	v := strings.TrimSpace(Version)
 	if v != "" && v != "dev" {
 		// Caller injected a version via ldflags
 		return v
 	}
 
-	// Try: git describe --tags --dirty --always
-	if out, err := exec.CommandContext(ctx, "git", "describe", "--tags", "--dirty", "--always").Output(); err == nil {
-		if s := strings.TrimSpace(string(out)); s != "" {
-			return s
-		}
-	}
-
-	// Fallback: Go build info
+	// Prefer the module version embedded by the Go toolchain when installed via
+	// `go install module@version` (e.g., v0.2.0). When built from source it is usually
+	// "(devel)" and thus ignored.
 	if bi, ok := debug.ReadBuildInfo(); ok && bi != nil {
+		if mv := strings.TrimSpace(bi.Main.Version); mv != "" && mv != "(devel)" {
+			return mv
+		}
 		var rev string
 		var dirty string
 		for _, s := range bi.Settings {
@@ -76,17 +72,11 @@ func EffectiveVersion(ctx context.Context) string {
 // EffectiveCommit returns the preferred commit hash for the build.
 // Precedence:
 // 1) Commit from ldflags, if provided.
-// 2) `git rev-parse HEAD` from the local repo.
-// 3) Go build info `vcs.revision` (shortened).
-func EffectiveCommit(ctx context.Context) string {
+// 2) Go build info `vcs.revision` (if available).
+func EffectiveCommit(_ context.Context) string {
 	c := strings.TrimSpace(Commit)
 	if c != "" {
 		return c
-	}
-	if out, err := exec.CommandContext(ctx, "git", "rev-parse", "HEAD").Output(); err == nil {
-		if s := strings.TrimSpace(string(out)); s != "" {
-			return s
-		}
 	}
 	if bi, ok := debug.ReadBuildInfo(); ok && bi != nil {
 		for _, s := range bi.Settings {
