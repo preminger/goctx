@@ -58,17 +58,10 @@ changelog:
       - '^chore:'
       - '^test:'
 
-homebrew:
+brews:
   - name: goctx
     ids:
       - goctx
-    # Restrict to the architectures we actually build, avoiding 32-bit ARM lookups
-    goos:
-      - darwin
-      - linux
-    goarch:
-      - amd64
-      - arm64
     repository:
       owner: preminger
       name: homebrew-tap
