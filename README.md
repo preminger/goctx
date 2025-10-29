@@ -16,87 +16,98 @@ Now there is.
 goctx ./main.go:target
 ```
 
-#### Before
-
-```go
-package main
+<table width="100%">
+  <colgroup>
+    <col width="50%">
+    <col width="50%">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="left" width="50%">Before</th>
+      <th align="left" width="50%">After</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><pre>package main
 
 import "context"
 
 func targetFunc() {}
 
 func funcOne() {
-	targetFunc()
+  targetFunc()
 }
 
 func funcTwo() {
-	funcOne()
+  funcOne()
 }
 
 func funcThreeA(_ context.Context) {
-	funcTwo()
+  funcTwo()
 }
 
 func funcThreeB() {
-	funcOne()
+  funcOne()
 }
 
 func funcThreeC(myWeirdlyNamedCtx context.Context) {
-	funcTwo()
+  funcTwo()
 }
 
 func funcFour() {
-	funcThreeB()
+  funcThreeB()
 }
 
 func main() {
-	ctx := context.Background()
-	funcFour()
-	funcThreeA(ctx)
-	funcThreeC(ctx)
+  ctx := context.Background()
+  funcFour()
+  funcThreeA(ctx)
+  funcThreeC(ctx)
 }
-```
-
-#### After
-
-```go
-package main
+</pre></td>
+      <td><pre>package main
 
 import "context"
 
 func targetFunc(ctx context.Context) {}
 
 func funcOne(ctx context.Context) {
-	targetFunc(ctx)
+  targetFunc(ctx)
 }
 
 func funcTwo(ctx context.Context) {
-	funcOne(ctx)
+  funcOne(ctx)
 }
 
 func funcThreeA(ctx context.Context) {
-	funcTwo(ctx)
+  funcTwo(ctx)
 }
 
 func funcThreeB(ctx context.Context) {
-	funcOne(ctx)
+  funcOne(ctx)
 }
 
 func funcThreeC(myWeirdlyNamedCtx context.Context) {
-	funcTwo(myWeirdlyNamedCtx)
+  funcTwo(myWeirdlyNamedCtx)
 }
 
 func funcFour(ctx context.Context) {
-	funcThreeB(ctx)
+  funcThreeB(ctx)
 }
 
 func main() {
-	ctx := context.Background()
-	funcFour(ctx)
-	funcThreeA(ctx)
-	funcThreeC(ctx)
+  ctx := context.Background()
+  funcFour(ctx)
+  funcThreeA(ctx)
+  funcThreeC(ctx)
 }
-```
+</pre></td>
+    </tr>
+  </tbody>
+</table>
+
+<p><em>Note:</em> GitHub/GitLab READMEs strip custom CSS/JS. As a result, tables will not automatically switch from side-by-side to stacked on narrow screens, and exact 50/50 column widths cannot be strictly enforced. The two-column table above is the most compatible approach within these constraints.</p>
 
 ## Description
 
@@ -129,7 +140,7 @@ You can install the CLI with a regular `go install` or build from source.
 
     ```shell
     go build -o bin/goctx ./app/goctx
-    ````
+    ```
 
   - Using the provided Makefile and GoReleaser (snapshot build):
 
