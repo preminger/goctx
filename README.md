@@ -119,7 +119,7 @@ You can install the CLI with a regular `go install` or build from source.
 
 - Latest version using `go install`:
 
-  go install github.com/preminger/goctx@latest
+  go install github.com/preminger/goctx/app/goctx@latest
 
   This will install a `goctx` binary in your `GOBIN` (or `$GOPATH/bin`).
 
