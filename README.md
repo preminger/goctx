@@ -107,6 +107,10 @@ This tool analyzes your Go source, ensures a `context.Context` parameter exists 
 - Input: a target function specified as `path/to/file.go:FuncName[:N]` (with optional line number).
 - Output: in-place source edits to add or thread a `context.Context` (named `ctx`) through your code.
 
+>[!NOTE]
+> Any use of `goctx` is analogous to passing the `-w` flag to tools like `gofmt`, `goimports`, etc. - in other words, `goctx` CHANGES YOUR SOURCE FILES, writing the modified files _in place_. (The changes are strictly additive; but they are changes nonetheless.)
+> There is no built-in mechanism for undoing these changes. Please make diligent use of version-control!
+
 ## Why
 
 - Standardize context propagation without tedious, error-prone manual edits.
