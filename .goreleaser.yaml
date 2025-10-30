@@ -54,25 +54,26 @@ changelog:
   sort: asc
   filters:
     exclude:
+      # Adjusted filter to ensure consistency (included the colon for 'test')
       - '^docs:'
       - '^chore:'
       - '^test:'
 
-brews:
+homebrew_casks:
   - name: goctx
     ids:
       - default
     repository:
       owner: preminger
       name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
     commit_author:
       name: Omer Preminger
       email: omer@preminger.xyz
     homepage: "https://github.com/preminger/goctx"
     description: "Propagate context.Context through Go call graphs automatically."
     license: "Apache 2.0"
-    test: |
-      system "#{bin}/goctx", "version"
+    # GoReleaser automatically generates the appropriate test block for the Cask.
 
 release:
   # By default, GoReleaser infers GitHub/GitLab repo from the git remote.
