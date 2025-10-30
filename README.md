@@ -13,7 +13,7 @@ Now there is.
 #### Command-line
 
 ```shell
-goctx ./main.go:target
+goctx ./main.go:targetFunc
 ```
 
 #### Before
