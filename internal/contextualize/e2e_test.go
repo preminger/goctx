@@ -227,3 +227,34 @@ func TestE2E_BigExample(t *testing.T) {
 	}
 	g.Assert(t, "e2e_big_example_main_go", []byte(normalizeNewlines(string(b))))
 }
+
+func TestE2E_Methods_Propagation(t *testing.T) {
+	ctx := t.Context()
+	g := goldie.New(t, goldie.WithFixtureDir(fixturesDir(t)))
+
+	t.Run("1", func(t *testing.T) {
+		dir := writeTempModuleFromInput(t, "e2e_methods1")
+		target := filepath.Join(dir, "main.go") + ":target"
+		if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
+			t.Fatalf("Run error: %v", err)
+		}
+		b, err := os.ReadFile(filepath.Join(dir, "main.go"))
+		if err != nil {
+			t.Fatalf("read main.go: %v", err)
+		}
+		g.Assert(t, "e2e_methods1_main_go", []byte(normalizeNewlines(string(b))))
+	})
+
+	t.Run("2", func(t *testing.T) {
+		dir := writeTempModuleFromInput(t, "e2e_methods2")
+		target := filepath.Join(dir, "main.go") + ":target"
+		if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
+			t.Fatalf("Run error: %v", err)
+		}
+		b, err := os.ReadFile(filepath.Join(dir, "main.go"))
+		if err != nil {
+			t.Fatalf("read main.go: %v", err)
+		}
+		g.Assert(t, "e2e_methods2_main_go", []byte(normalizeNewlines(string(b))))
+	})
+}
