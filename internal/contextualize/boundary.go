@@ -250,7 +250,17 @@ func ensureCallHasCtxArg(_ *packages.Package, call *ast.CallExpr, ctxName string
 }
 
 func getCtxIdentInScope(fn *ast.FuncDecl, pkg *packages.Package) string {
-	// Prefer a parameter of type context.Context with a usable name (not underscore)
+	// 1) Prefer a parameter literally named "ctx" (regardless of type info availability)
+	if fn != nil && fn.Type != nil && fn.Type.Params != nil {
+		for _, field := range fn.Type.Params.List {
+			for _, name := range field.Names {
+				if name != nil && name.Name == VarNameCtx {
+					return VarNameCtx
+				}
+			}
+		}
+	}
+	// 2) Prefer any parameter of type context.Context with a usable name (not underscore)
 	if fn != nil && fn.Type != nil && fn.Type.Params != nil {
 		for _, field := range fn.Type.Params.List {
 			if field == nil || field.Type == nil {
@@ -268,8 +278,21 @@ func getCtxIdentInScope(fn *ast.FuncDecl, pkg *packages.Package) string {
 			}
 		}
 	}
-	// Otherwise, search identifiers used/defined in body with type context.Context
+	// 3) If there's any local identifier literally named "ctx" in this function's body (e.g., ctx := ...), reuse it.
 	var found string
+	ast.Inspect(fn, func(n ast.Node) bool {
+		if id, ok := n.(*ast.Ident); ok {
+			if id.Name == VarNameCtx {
+				found = VarNameCtx
+				return false
+			}
+		}
+		return true
+	})
+	if found != "" {
+		return found
+	}
+	// 4) Finally, search identifiers with type context.Context via types info (best-effort when info is present)
 	ast.Inspect(fn, func(n ast.Node) bool {
 		id, ok := n.(*ast.Ident)
 		if !ok || id.Name == "_" || id.Name == "" {
