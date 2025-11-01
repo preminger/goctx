@@ -9,6 +9,10 @@ import (
 )
 
 func main() {
+	os.Exit(actualMain())
+}
+
+func actualMain() int {
 	ctx := context.Background()
 
 	rootCmd := goctx.NewRootCmd(ctx)
@@ -18,6 +22,8 @@ func main() {
 
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		return 1
 	}
+
+	return 0
 }
