@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2025-11-01
+
+### Changed
+
+- Original contents of `func main()` now reside in a function `func actualMain() int`, which returns a value that `main()` then feeds to `os.Exit(...)`. This allows `defer` patterns to work correctly in main function.
+
 ## [0.4.1] - 2025-11-01
 
 ### Added
@@ -15,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.4.1...HEAD
+[unreleased]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/olivierlacan/keep-a-changelog/releases/tag/v0.4.0
