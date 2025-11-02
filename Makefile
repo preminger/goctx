@@ -41,6 +41,9 @@ build:
 # Create and push a new git tag based on semantic version analysis by svu
 # Requires a clean working tree and an "origin" remote.
 release:
-	git tag "$(shell svu next)"
-	git push --tags
+	set -euo pipefail; \
+	VERSION="$$(${SVU:-svu} next)"; \
+	echo "$$VERSION"; \
+	git tag "$$VERSION"; \
+	git push --tags; \
 	goreleaser release --clean
