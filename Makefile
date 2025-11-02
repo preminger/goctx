@@ -35,6 +35,8 @@ test-unit:
 	go test ./... -coverprofile=coverage.out -covermode=atomic; \
 	go tool cover -func=coverage.out | tail -n 1; \
 	go tool cover -html=coverage.out -o coverage.html
+	@VERSION="$$($(SVU_BIN) next)"; \
+	echo "Computed tag for next version: $$VERSION"; \
 
 # Build artifacts using GoReleaser
 # Uses snapshot mode so it doesn't require a VCS tag or publish a release
