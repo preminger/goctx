@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 2025-11-02
+
+### Fixed
+
+- Changelog fixes.
+
+## [0.5.1] - 2025-11-02
+
+### Fixed
+
+- Swap inner & outer quotation marks in Homebrew description in .goreleaser.yaml
+
 ## [0.5.0] - 2025-11-02
 
 ### Added
