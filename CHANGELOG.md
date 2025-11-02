@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3] - 2025-11-02
+
+### Removed
+
+- Printing of what next git tag _would_ be in Makefile `test` target, and associated flags in `actions/checkout@v4` step in `checks` workflow.
+
 ## [0.5.2] - 2025-11-02
 
 ### Fixed
@@ -67,7 +73,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.5.0...HEAD
+[unreleased]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.5.3...HEAD
+[0.5.3]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.5.2...v0.5.3
+[0.5.2]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.5.1...v0.5.2
+[0.5.1]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.4.6...v0.5.0
 [0.4.6]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.4.5...v0.4.6
 [0.4.5]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.4.4...v0.4.5
