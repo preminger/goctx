@@ -16,4 +16,4 @@ brew "golangci-lint-langserver"
 brew "markdownlint-cli2"
 
 # From tap
-brew "caarlos0/tap/svu"
+cask "caarlos0/tap/svu"
