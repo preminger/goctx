@@ -3,9 +3,6 @@
 #   brew bundle install --no-lock
 #   brew bundle cleanup --force   # optional: remove anything not in this Brewfile
 
-# Taps
-tap "caarlos0/tap"
-
 # Formulae
 brew "go"
 brew "goreleaser"
@@ -15,5 +12,5 @@ brew "golangci-lint"
 brew "golangci-lint-langserver"
 brew "markdownlint-cli2"
 
-# From tap
-brew "caarlos0/tap/svu"
+# Go-based tools
+go "github.com/caarlos0/svu"
