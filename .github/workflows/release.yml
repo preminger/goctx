@@ -5,9 +5,11 @@ defaults:
     shell: bash
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
 
 concurrency:
   group: release
@@ -19,6 +21,7 @@ permissions:
 
 jobs:
   release:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
     timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
