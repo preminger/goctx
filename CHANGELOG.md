@@ -7,9 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.7] - 2025-11-02
+
+### Fixed
+
+- Computation of next git tag in `release` workflow.
+
 ## [0.4.6] - 2025-11-02
 
-- Changed message about next computed tag in Makefile `release` target to actually include the term "tag" in the message.
+### Changed
+
+- Include the term "tag" in the message about next computed tag in Makefile `release` target.
 
 ## [0.4.5] - 2025-11-02
 
@@ -43,7 +51,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.4.5...HEAD
+[unreleased]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.4.7...HEAD
+[0.4.7]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.4.6...v0.4.7
+[0.4.6]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.4.5...v0.4.6
 [0.4.5]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.4.3...v0.4.4
 [0.4.3]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.4.2...v0.4.3
