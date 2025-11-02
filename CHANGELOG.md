@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.6] - 2025-11-02
+
+- Changed message about next computed tag in Makefile `release` target to actually include the term "tag" in the message.
+
 ## [0.4.5] - 2025-11-02
 
 ### Fixed
