@@ -41,9 +41,13 @@ build:
 # Create and push a new git tag based on semantic version analysis by svu
 # Requires a clean working tree and an "origin" remote.
 release:
-	set -euo pipefail; \
-	VERSION="$$(${SVU:-svu} next)"; \
-	echo "$$VERSION"; \
+	@set -euo pipefail; \
+	GOBIN="$$(go env GOBIN)"; \
+	GOPATH="$$(go env GOPATH)"; \
+	if [[ -n "$$GOBIN" ]]; then SVU_BIN="$$GOBIN/svu"; else SVU_BIN="$$GOPATH/bin/svu"; fi; \
+	if [[ -n "$$SVU" ]]; then SVU_CMD="$$SVU"; else SVU_CMD="$$SVU_BIN"; fi; \
+	VERSION="$$( "$$SVU_CMD" next )"; \
+	echo "About to create tag $$VERSION"; \
 	git tag "$$VERSION"; \
 	git push --tags; \
 	goreleaser release --clean
