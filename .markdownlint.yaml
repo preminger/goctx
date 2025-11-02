@@ -1,3 +1,4 @@
-line-length: false
-no-hard-tabs: false
 descriptive-link-text: false
+line-length: false
+no-duplicate-heading: false
+no-hard-tabs: false
