@@ -2,6 +2,9 @@ SHELL := /bin/bash
 
 .PHONY: init lint markdownlint test test-unit build release
 
+# Determine path to svu binary using go env (prefers GOBIN over GOPATH/bin)
+SVU_BIN := $(shell bash -lc 'if [ -n "$$(/usr/bin/env go env GOBIN)" ]; then echo "$$(/usr/bin/env go env GOBIN)/svu"; else echo "$$(/usr/bin/env go env GOPATH)/bin/svu"; fi')
+
 # Install required developer tools via Homebrew Brewfile
 init:
 	brew bundle install
@@ -41,13 +44,8 @@ build:
 # Create and push a new git tag based on semantic version analysis by svu
 # Requires a clean working tree and an "origin" remote.
 release:
-	@set -euo pipefail; \
-	GOBIN="$$(go env GOBIN)"; \
-	GOPATH="$$(go env GOPATH)"; \
-	if [[ -n "$$GOBIN" ]]; then SVU_BIN="$$GOBIN/svu"; else SVU_BIN="$$GOPATH/bin/svu"; fi; \
-	if [[ -n "$$SVU" ]]; then SVU_CMD="$$SVU"; else SVU_CMD="$$SVU_BIN"; fi; \
-	VERSION="$$( "$$SVU_CMD" next )"; \
-	echo "About to create tag $$VERSION"; \
+	@VERSION="$$($(SVU_BIN) next)"; \
+	echo "Computed next version: $$VERSION"; \
 	git tag "$$VERSION"; \
 	git push --tags; \
 	goreleaser release --clean
