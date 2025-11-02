@@ -45,7 +45,7 @@ build:
 # Requires a clean working tree and an "origin" remote.
 release:
 	@VERSION="$$($(SVU_BIN) next)"; \
-	echo "Computed next version: $$VERSION"; \
+	echo "Computed tag for next version: $$VERSION"; \
 	git tag "$$VERSION"; \
 	git push --tags; \
 	goreleaser release --clean
