@@ -71,7 +71,7 @@ homebrew_casks:
       name: Omer Preminger
       email: omer@preminger.xyz
     homepage: "https://github.com/preminger/goctx"
-    description: 'Command-line Go utility that automatically adds missing "plumbing" for `context.Context` parameters along the call-graph leading to a given function.'
+    description: "Command-line Go utility that automatically adds missing 'plumbing' for `context.Context` parameters along the call-graph leading to a given function."
     license: "Apache 2.0"
     # GoReleaser automatically generates the appropriate test block for the Cask.
 
