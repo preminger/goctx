@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.7] - 2025-11-02
 
+### Added
+
+- Print message about what next git tag _would_ be in Makefile `test` target.
+
 ### Fixed
 
 - Computation of next git tag in `release` workflow.
