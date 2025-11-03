@@ -8,17 +8,28 @@ REPO_ROOT := $(shell git rev-parse --show-toplevel)
 # Determine path to svu binary using go env (prefers GOBIN over GOPATH/bin)
 SVU_BIN := $(shell bash -lc 'if [ -n "$$(/usr/bin/env go env GOBIN)" ]; then echo "$$(/usr/bin/env go env GOBIN)/svu"; else echo "$$(/usr/bin/env go env GOPATH)/bin/svu"; fi')
 
-# Install required developer tools via Homebrew Brewfile
+# Install required developer tools via Homebrew Brewfile and set up Husky git hooks
 init:
 	brew bundle install
+	# Install Node dev deps (for Husky) and set up hooks on clone
+	@if command -v npm >/dev/null 2>&1; then \
+		npm ci || npm install; \
+	else \
+		echo "npm not found; skipping Husky install. Git hooks may not be configured."; \
+	fi
+	# Point Git to Husky-managed hooks directory
+	git config core.hooksPath .husky
+	chmod +x .husky/pre-push || true
 
-# Run markdownlint on all Markdown files
+# Run markdownlint on Markdown files known to Git (respects .gitignore)
 markdownlint: init
 	@if ! command -v markdownlint-cli2 >/dev/null 2>&1; then \
 		echo "markdownlint-cli2 not installed. Run: make init"; \
 		exit 1; \
 	fi; \
-	markdownlint-cli2 "**/*.md"
+	FILES=$$(git ls-files --cached --others --exclude-standard -- '*.md'); \
+	if [ -z "$$FILES" ]; then echo "No Markdown files found."; exit 0; fi; \
+	git ls-files -z --cached --others --exclude-standard -- '*.md' | xargs -0 markdownlint-cli2
 
 # Run linters and auto-fix simple issues when possible
 lint: markdownlint init
