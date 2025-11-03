@@ -34,4 +34,6 @@ go.work.sum
 /.idea
 /.vscode
 
+node_modules
+
 /schemas/goreleaser.schema.json
