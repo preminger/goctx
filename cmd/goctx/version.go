@@ -2,6 +2,7 @@ package goctx
 
 import (
 	"context"
+	"fmt"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -126,4 +127,22 @@ func parseRFC3339MaybeNano(v string) (time.Time, bool) {
 		return t, true
 	}
 	return time.Time{}, false
+}
+
+func OverallVersionString(ctx context.Context) string {
+	var out strings.Builder
+	fmt.Fprintf(&out, "%s", EffectiveVersion(ctx))
+	if c := EffectiveCommit(ctx); c != "" {
+		fmt.Fprintf(&out, "-%s", c)
+	}
+	if t, ok := EffectiveBuildTimeParsed(); ok {
+		local := t.In(time.Local)
+		// Use a readable local format including zone name
+		fmt.Fprintf(&out, "-%s", local.Format(time.RFC3339))
+	} else if raw := EffectiveBuildTime(); raw != "" {
+		// Fallback to raw string if parsing failed but value exists
+		fmt.Fprintf(&out, "-%s", raw)
+	}
+
+	return out.String()
 }

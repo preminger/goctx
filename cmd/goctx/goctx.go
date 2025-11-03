@@ -28,7 +28,7 @@ resolution is ambiguous and the tool will ask you to disambiguate by line number
 
   # Stop propagation at another function (also supports :N)
   goctx --stop-at ./pkg/stop.go:Boundary ./pkg/foo.go:DoThing`,
-		Version: EffectiveVersion(ctx),
+		Version: OverallVersionString(ctx),
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			stopAt, err := cmd.Flags().GetString(OptNameStopAt)
