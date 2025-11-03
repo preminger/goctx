@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.3] - 2025-11-03
+
+### Fixed
+
+- Links at the bottom of the CHANGELOG now point to the right repo.
+
 ## [0.8.2] - 2025-11-03
 
 ### Added
@@ -121,23 +127,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.8.2...HEAD
-[0.8.2]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.8.1...v0.8.2
-[0.8.1]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.8.0...v0.8.1
-[0.8.0]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.7.0...v0.8.0
-[0.7.0]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.6.0...v0.7.0
-[0.6.0]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.5.6...v0.6.0
-[0.5.6]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.5.5...v0.5.6
-[0.5.5]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.5.4...v0.5.5
-[0.5.4]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.5.3...v0.5.4
-[0.5.3]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.5.2...v0.5.3
-[0.5.2]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.5.1...v0.5.2
-[0.5.1]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.5.0...v0.5.1
-[0.5.0]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.4.6...v0.5.0
-[0.4.6]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.4.5...v0.4.6
-[0.4.5]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.4.4...v0.4.5
-[0.4.4]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.4.3...v0.4.4
-[0.4.3]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.4.2...v0.4.3
-[0.4.2]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.4.1...v0.4.2
-[0.4.1]: https://github.com/olivierlacan/keep-a-changelog/compare/v0.4.0...v0.4.1
-[0.4.0]: https://github.com/olivierlacan/keep-a-changelog/releases/tag/v0.4.0
+[unreleased]: https://github.com/preminger/goctx/compare/v0.8.3...HEAD
+[0.8.3]: https://github.com/preminger/goctx/compare/v0.8.2...v0.8.3
+[0.8.2]: https://github.com/preminger/goctx/compare/v0.8.1...v0.8.2
+[0.8.1]: https://github.com/preminger/goctx/compare/v0.8.0...v0.8.1
+[0.8.0]: https://github.com/preminger/goctx/compare/v0.7.0...v0.8.0
+[0.7.0]: https://github.com/preminger/goctx/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/preminger/goctx/compare/v0.5.6...v0.6.0
+[0.5.6]: https://github.com/preminger/goctx/compare/v0.5.5...v0.5.6
+[0.5.5]: https://github.com/preminger/goctx/compare/v0.5.4...v0.5.5
+[0.5.4]: https://github.com/preminger/goctx/compare/v0.5.3...v0.5.4
+[0.5.3]: https://github.com/preminger/goctx/compare/v0.5.2...v0.5.3
+[0.5.2]: https://github.com/preminger/goctx/compare/v0.5.1...v0.5.2
+[0.5.1]: https://github.com/preminger/goctx/compare/v0.5.0...v0.5.1
+[0.5.0]: https://github.com/preminger/goctx/compare/v0.4.6...v0.5.0
+[0.4.6]: https://github.com/preminger/goctx/compare/v0.4.5...v0.4.6
+[0.4.5]: https://github.com/preminger/goctx/compare/v0.4.4...v0.4.5
+[0.4.4]: https://github.com/preminger/goctx/compare/v0.4.3...v0.4.4
+[0.4.3]: https://github.com/preminger/goctx/compare/v0.4.2...v0.4.3
+[0.4.2]: https://github.com/preminger/goctx/compare/v0.4.1...v0.4.2
+[0.4.1]: https://github.com/preminger/goctx/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/preminger/goctx/releases/tag/v0.4.0
