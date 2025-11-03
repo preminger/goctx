@@ -65,6 +65,9 @@ resolution is ambiguous and the tool will ask you to disambiguate by line number
 	return rootCmd
 }
 
+// ExecuteWithFang runs the root Cobra command with Fang-specific options.
+// It accepts a context and a root Cobra command as input parameters.
+// Returns an error if the command execution fails.
 func ExecuteWithFang(ctx context.Context, rootCmd *cobra.Command) error {
 	return fang.Execute(ctx, rootCmd, fang.WithVersion(rootCmd.Version), fang.WithoutManpage()) //nolint:wrapcheck // This is the top-level error emitted from cobra, so it's okay.
 }
