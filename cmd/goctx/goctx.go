@@ -10,11 +10,13 @@ import (
 	"github.com/preminger/goctx/internal/contextualize"
 )
 
+const shortDescription = "Command-line Go utility that automatically adds missing 'plumbing' for `context.Context` parameters along the call-graph leading to a given function."
+
 func NewRootCmd(ctx context.Context) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "goctx TARGET",
-		Short: "Propagate context.Context through Go call graphs",
-		Long: `Propagate context.Context through Go call graphs.
+		Short: shortDescription,
+		Long: shortDescription + `
 
 TARGET is of the form:
   path/to/file.go:FuncName[:N]
