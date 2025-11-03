@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/preminger/goctx/internal/contextualize"
+	"github.com/charmbracelet/fang"
 	"github.com/spf13/cobra"
+
+	"github.com/preminger/goctx/internal/contextualize"
 )
 
 func NewRootCmd(ctx context.Context) *cobra.Command {
@@ -29,8 +31,12 @@ resolution is ambiguous and the tool will ask you to disambiguate by line number
   # Stop propagation at another function (also supports :N)
   goctx --stop-at ./pkg/stop.go:Boundary ./pkg/foo.go:DoThing`,
 		Version: OverallVersionString(ctx),
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(cmd.Flags().Args()) < 1 {
+				return cmd.Help()
+			}
+
 			stopAt, err := cmd.Flags().GetString(OptNameStopAt)
 			if err != nil {
 				return fmt.Errorf("parsing stop-at: %w", err)
@@ -55,4 +61,8 @@ resolution is ambiguous and the tool will ask you to disambiguate by line number
 	}
 
 	return rootCmd
+}
+
+func ExecuteWithFang(ctx context.Context, rootCmd *cobra.Command) error {
+	return fang.Execute(ctx, rootCmd, fang.WithVersion(rootCmd.Version), fang.WithoutManpage()) //nolint:wrapcheck // This is the top-level error emitted from cobra, so it's okay.
 }

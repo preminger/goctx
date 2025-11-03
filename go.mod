@@ -6,6 +6,7 @@ require (
 	github.com/charmbracelet/fang v0.4.3
 	github.com/sebdah/goldie/v2 v2.5.3
 	github.com/spf13/cobra v1.10.1
+	github.com/stretchr/testify v1.10.0
 	golang.org/x/tools v0.38.0
 )
 
@@ -19,6 +20,7 @@ require (
 	github.com/charmbracelet/x/term v0.2.1 // indirect
 	github.com/charmbracelet/x/termios v0.1.1 // indirect
 	github.com/charmbracelet/x/windows v0.2.2 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.3.0 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
@@ -36,4 +38,5 @@ require (
 	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.37.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
