@@ -1,5 +1,8 @@
 SHELL := /bin/bash
 
+# Repository root directory
+REPO_ROOT := $(shell git rev-parse --show-toplevel)
+
 .PHONY: init lint markdownlint test test-unit build release
 
 # Determine path to svu binary using go env (prefers GOBIN over GOPATH/bin)
@@ -44,7 +47,7 @@ build: init
 # Create and push a new git tag based on semantic version analysis by svu
 # Requires a clean working tree and an "origin" remote.
 release: init
-	@VERSION="$(shell $(SVU_BIN) next)"; \
+	@VERSION="$(shell cd $(REPO_ROOT) && $(SVU_BIN) next)"; \
 	echo "Computed tag for next version: $$VERSION"; \
 	git tag "$$VERSION"; \
 	git push --tags; \
