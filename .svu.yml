@@ -1,3 +1,4 @@
 always: true
 v0: true
 tag.mode: all
+verbose: true

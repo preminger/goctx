@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/charmbracelet/fang"
+
 	"github.com/preminger/goctx/cmd/goctx"
 )
 
@@ -20,7 +22,7 @@ func actualMain() int {
 	rootCmd.Flags().String(goctx.OptNameStopAt, "", "Optional terminating function path of the form path/to/file.go:FuncName[:N]")
 	rootCmd.Flags().Bool(goctx.OptNameHTTP, false, "Terminate at http.HandlerFunc boundaries and derive ctx from req.Context()")
 
-	if err := rootCmd.ExecuteContext(ctx); err != nil {
+	if err := fang.Execute(ctx, rootCmd, fang.WithVersion(rootCmd.Version), fang.WithoutManpage()); err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
 		return 1
 	}

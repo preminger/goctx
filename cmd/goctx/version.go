@@ -3,12 +3,9 @@ package goctx
 import (
 	"context"
 	"fmt"
-
 	"runtime/debug"
 	"strings"
 	"time"
-
-	"github.com/spf13/cobra"
 )
 
 // Version is the CLI version. It can be overridden at build time via:
@@ -132,25 +129,20 @@ func parseRFC3339MaybeNano(v string) (time.Time, bool) {
 	return time.Time{}, false
 }
 
-func NewVersionCmd(ctx context.Context) *cobra.Command {
-	return &cobra.Command{
-		Use:   "version",
-		Short: "Print version information and exit",
-		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, _ []string) {
-			out := cmd.OutOrStdout()
-			fmt.Fprintf(out, "Version: %s\n", EffectiveVersion(ctx))
-			if c := EffectiveCommit(ctx); c != "" {
-				fmt.Fprintf(out, "Commit: %s\n", c)
-			}
-			if t, ok := EffectiveBuildTimeParsed(); ok {
-				local := t.In(time.Local)
-				// Use a readable local format including zone name
-				fmt.Fprintf(out, "Built:  %s\n", local.Format(time.RFC1123))
-			} else if raw := EffectiveBuildTime(); raw != "" {
-				// Fallback to raw string if parsing failed but value exists
-				fmt.Fprintf(out, "Built:  %s\n", raw)
-			}
-		},
+func OverallVersionString(ctx context.Context) string {
+	var out strings.Builder
+	fmt.Fprintf(&out, "%s", EffectiveVersion(ctx))
+	if c := EffectiveCommit(ctx); c != "" {
+		fmt.Fprintf(&out, "-%s", c)
 	}
+	if t, ok := EffectiveBuildTimeParsed(); ok {
+		local := t.In(time.Local)
+		// Use a readable local format including zone name
+		fmt.Fprintf(&out, "-%s", local.Format(time.RFC3339))
+	} else if raw := EffectiveBuildTime(); raw != "" {
+		// Fallback to raw string if parsing failed but value exists
+		fmt.Fprintf(&out, "-%s", raw)
+	}
+
+	return out.String()
 }
