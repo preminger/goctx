@@ -5,6 +5,9 @@
 # CHANGELOG.md is among the changed files. The check is applied to branch pushes
 # (refs/heads/*) except for main/master. Tag pushes and pushes to main/master are
 # exempt. You can bypass the check by setting BYPASS_CHANGELOG_CHECK=1.
+#
+# Additionally, this hook validates that CHANGELOG.md follows Keep a Changelog
+# conventions and that the reference links at the bottom match the headings.
 
 set -euo pipefail
 
@@ -80,6 +83,93 @@ while read -r local_ref local_sha remote_ref remote_sha; do
   fi
 
 done
+
+# Validate CHANGELOG formatting and link references regardless of whether it changed
+validate_changelog() {
+  local file="CHANGELOG.md"
+  if [[ ! -f "$file" ]]; then
+    echo "[pre-push] ERROR: $file not found in repository root." >&2
+    return 1
+  fi
+
+  local errors=0
+
+  # Ensure top-level title exists
+  if ! grep -Eq '^# Changelog\s*$' "$file"; then
+    echo "[pre-push] ERROR: CHANGELOG.md must start with '# Changelog' title." >&2
+    errors=1
+  fi
+
+  # Find headings and validate date format for released versions
+  # Capture line num and content to point out problems
+  while IFS= read -r line; do
+    local lineno=${line%%:*}
+    local content=${line#*:}
+    # Extract name inside brackets
+    local name
+    name=$(sed -E 's/.*\[([^]]+)\].*/\1/' <<<"$content")
+    if [[ "$name" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+      if ! grep -Eq "^## \[$name\] - [0-9]{4}-[0-9]{2}-[0-9]{2}$" <(printf '%s' "$content"); then
+        echo "[pre-push] ERROR: Line $lineno: Release '$name' must include a date 'YYYY-MM-DD' (Keep a Changelog)." >&2
+        errors=1
+      fi
+    fi
+  done < <(grep -En '^## \[(Unreleased|[0-9]+\.[0-9]+\.[0-9]+)\]( - [0-9]{4}-[0-9]{2}-[0-9]{2})?$' "$file")
+
+  # Build sets of heading names and link reference names
+  local headings links name
+  mapfile -t headings < <(grep -En '^## \[(Unreleased|[0-9]+\.[0-9]+\.[0-9]+)\]' "$file" | sed -E 's/.*\[([^]]+)\].*/\1/' | sed -E 's/^Unreleased$/unreleased/I')
+  mapfile -t links < <(grep -En '^\[([0-9]+\.[0-9]+\.[0-9]+|[Uu]nreleased)\]:' "$file" | sed -E 's/^\[([^]]+)\].*/\1/' | sed -E 's/^Unreleased$/unreleased/I')
+
+  contains() { grep -Fxq "$1" <<<"$2"; }
+
+  # Check each heading has a link
+  if ((${#headings[@]} > 0)); then
+    local links_str
+    links_str=$(printf '%s\n' "${links[@]}" | sort -u)
+    for name in "${headings[@]}"; do
+      if ! contains "$name" "$links_str"; then
+        # Allow that Unreleased heading may not have a link if there are no releases
+        if [[ "$name" != "unreleased" ]]; then
+          echo "[pre-push] ERROR: Missing link reference for heading '[$name]' at bottom of CHANGELOG.md." >&2
+          errors=1
+        fi
+      fi
+    done
+  fi
+
+  # Check there are no extra links without headings
+  if ((${#links[@]} > 0)); then
+    local heads_str
+    heads_str=$(printf '%s\n' "${headings[@]}" | sort -u)
+    for name in "${links[@]}"; do
+      if ! contains "$name" "$heads_str"; then
+        echo "[pre-push] ERROR: Link reference '[$name]:' exists without a corresponding '## [$name]' heading." >&2
+        errors=1
+      fi
+    done
+  fi
+
+  if [[ $errors -ne 0 ]]; then
+    cat >&2 <<'EOM'
+[pre-push] Hints:
+- Follow https://keepachangelog.com/en/1.1.0/
+- Each release heading must be in the form: '## [X.Y.Y] - YYYY-MM-DD'
+- Include '## [Unreleased]' at the top.
+- Add link reference definitions at the bottom for each heading, e.g.:
+  [unreleased]: https://github.com/<org>/<repo>/compare/vX.Y.Z...HEAD
+  [X.Y.Z]: https://github.com/<org>/<repo>/compare/vA.B.C...vX.Y.Z
+EOM
+    return 1
+  fi
+
+  return 0
+}
+
+if ! validate_changelog; then
+  echo "[pre-push] Push aborted due to CHANGELOG.md validation errors." >&2
+  exit 1
+fi
 
 if [[ "$missing_changelog" -ne 0 ]]; then
   echo "[pre-push] Push aborted due to missing CHANGELOG.md update." >&2
