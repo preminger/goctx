@@ -1,0 +1,13 @@
+{
+  "name": "goctx",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Developer tooling for git hooks via Husky",
+  "license": "MIT",
+  "devDependencies": {
+    "husky": "^9.0.0"
+  },
+  "scripts": {
+    "prepare": "husky"
+  }
+}

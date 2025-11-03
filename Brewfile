@@ -10,6 +10,8 @@ brew "gofumpt"
 brew "goimports"
 brew "golangci-lint"
 brew "golangci-lint-langserver"
+# Provides Node.js and npm (required for Husky hooks setup)
+brew "node"
 brew "markdownlint-cli2"
 
 # Go-based tools

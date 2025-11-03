@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+# pre-push hook: ensure CHANGELOG.md has been updated on branch pushes (PRs)
+#
+# It inspects the set of commits being pushed for each ref and verifies that
+# CHANGELOG.md is among the changed files. The check is applied to branch pushes
+# (refs/heads/*) except for main/master. Tag pushes and pushes to main/master are
+# exempt. You can bypass the check by setting BYPASS_CHANGELOG_CHECK=1.
+
+set -euo pipefail
+
+if [[ "${BYPASS_CHANGELOG_CHECK:-}" == "1" ]]; then
+  echo "[pre-push] Bypassing CHANGELOG check due to BYPASS_CHANGELOG_CHECK=1"
+  exit 0
+fi
+
+remote_name="$1"; shift || true
+remote_url="$1"; shift || true
+
+# Read lines from stdin: local_ref local_sha remote_ref remote_sha
+
+missing_changelog=0
+while read -r local_ref local_sha remote_ref remote_sha; do
+  # Skip if nothing to push for this ref
+  if [[ "$local_sha" == "0000000000000000000000000000000000000000" ]]; then
+    continue
+  fi
+
+  # Only enforce on branch pushes (potential PRs), skip tags
+  if [[ "$remote_ref" != refs/heads/* && "$remote_ref" == refs/tags/* ]]; then
+    continue
+  fi
+
+  # Skip protected default branches
+  if [[ "$remote_ref" == "refs/heads/main" || "$remote_ref" == "refs/heads/master" ]]; then
+    continue
+  fi
+
+  # Determine the base for diff: if remote ref doesn't exist yet (new branch),
+  # use the merge-base with default branch if available; else use remote_sha.
+  base="$remote_sha"
+  if [[ "$remote_sha" == "0000000000000000000000000000000000000000" ]]; then
+    # Attempt to find default branch (main or master)
+    default_branch=""
+    if git show-ref --verify --quiet refs/remotes/${remote_name}/main; then
+      default_branch="refs/remotes/${remote_name}/main"
+    elif git show-ref --verify --quiet refs/remotes/${remote_name}/master; then
+      default_branch="refs/remotes/${remote_name}/master"
+    fi
+
+    if [[ -n "$default_branch" ]]; then
+      if base_commit=$(git merge-base "$local_sha" "$default_branch" 2>/dev/null); then
+        base="$base_commit"
+      else
+        base=""
+      fi
+    else
+      base=""
+    fi
+  fi
+
+  # Compute changed files
+  if [[ -n "$base" ]]; then
+    changed_files=$(git diff --name-only "$base" "$local_sha")
+  else
+    # Fallback: use the files in the commits reachable from local that aren't in any remote
+    changed_files=$(git diff --name-only "$local_sha^!" || true)
+  fi
+
+  if [[ -z "$changed_files" ]]; then
+    # Nothing changed? Be conservative and fail so contributor reviews message.
+    missing_changelog=1
+    continue
+  fi
+
+  if ! grep -qx "CHANGELOG.md" <<<"$changed_files"; then
+    echo "[pre-push] Missing CHANGELOG.md update for push to $remote_ref" >&2
+    echo "[pre-push] The commits you are pushing must include a change to CHANGELOG.md." >&2
+    echo "[pre-push] If this push is not part of a PR or should be exempt, set BYPASS_CHANGELOG_CHECK=1." >&2
+    missing_changelog=1
+  fi
+
+done
+
+if [[ "$missing_changelog" -ne 0 ]]; then
+  echo "[pre-push] Push aborted due to missing CHANGELOG.md update." >&2
+  exit 1
+fi
+
+exit 0
