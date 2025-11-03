@@ -10,7 +10,7 @@ init:
 	brew bundle install
 
 # Run markdownlint on all Markdown files
-markdownlint:
+markdownlint: init
 	@if ! command -v markdownlint-cli2 >/dev/null 2>&1; then \
 		echo "markdownlint-cli2 not installed. Run: make init"; \
 		exit 1; \
@@ -18,19 +18,19 @@ markdownlint:
 	markdownlint-cli2 "**/*.md"
 
 # Run linters and auto-fix simple issues when possible
-lint: markdownlint
+lint: markdownlint init
 	golangci-lint run --fix --allow-parallel-runners
 
 # Aggregate test target: runs lint and unit tests with coverage
 # (no commands of its own)
-test: lint test-unit
+test: lint test-unit init
 
 # Run unit tests with coverage and generate HTML report
 # Outputs:
 #  - coverage.out   (coverage profile)
 #  - coverage.html  (HTML report)
 # Also prints the total coverage line to stdout
-test-unit:
+test-unit: init
 	set -euo pipefail; \
 	go test ./... -coverprofile=coverage.out -covermode=atomic; \
 	go tool cover -func=coverage.out | tail -n 1; \
@@ -38,12 +38,12 @@ test-unit:
 
 # Build artifacts using GoReleaser
 # Uses snapshot mode so it doesn't require a VCS tag or publish a release
-build:
+build: init
 	goreleaser build --snapshot --clean
 
 # Create and push a new git tag based on semantic version analysis by svu
 # Requires a clean working tree and an "origin" remote.
-release:
+release: init
 	@VERSION="$(shell $(SVU_BIN) next)"; \
 	echo "Computed tag for next version: $$VERSION"; \
 	git tag "$$VERSION"; \
