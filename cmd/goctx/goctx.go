@@ -10,7 +10,7 @@ import (
 
 func NewRootCmd(ctx context.Context) *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:   "contextualize TARGET",
+		Use:   "goctx TARGET",
 		Short: "Propagate context.Context through Go call graphs",
 		Long: `Propagate context.Context through Go call graphs.
 
@@ -21,14 +21,15 @@ Where N is the 1-based line number of the function/method declaration.
 If you omit N and multiple functions with the same name exist in the file,
 resolution is ambiguous and the tool will ask you to disambiguate by line number.`,
 		Example: `  # Target a function by name
-  contextualize ./pkg/foo.go:DoThing
+  goctx ./pkg/foo.go:DoThing
 
   # Disambiguate by 1-based line number of the declaration
-  contextualize ./pkg/foo.go:DoThing:42
+  goctx ./pkg/foo.go:DoThing:42
 
   # Stop propagation at another function (also supports :N)
-  contextualize --stop-at ./pkg/stop.go:Boundary ./pkg/foo.go:DoThing`,
-		Args: cobra.ExactArgs(1),
+  goctx --stop-at ./pkg/stop.go:Boundary ./pkg/foo.go:DoThing`,
+		Version: EffectiveVersion(ctx),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			stopAt, err := cmd.Flags().GetString(OptNameStopAt)
 			if err != nil {
@@ -52,9 +53,6 @@ resolution is ambiguous and the tool will ask you to disambiguate by line number
 			return nil
 		},
 	}
-
-	// Subcommands
-	rootCmd.AddCommand(NewVersionCmd(ctx))
 
 	return rootCmd
 }

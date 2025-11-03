@@ -47,7 +47,7 @@ build: init
 # Create and push a new git tag based on semantic version analysis by svu
 # Requires a clean working tree and an "origin" remote.
 release: init
-	@VERSION="$(shell cd $(REPO_ROOT) && $(SVU_BIN) next)"; \
+	@VERSION="$(shell cd $(REPO_ROOT) && $(SVU_BIN) next --force-patch-increment)"; \
 	echo "Computed tag for next version: $$VERSION"; \
 	git tag "$$VERSION"; \
 	git push --tags; \
