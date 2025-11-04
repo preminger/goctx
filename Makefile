@@ -18,6 +18,7 @@ init:
 	fi
 	@git config core.hooksPath .husky
 	@chmod +x .husky/pre-push || true
+	@go mod tidy
 
 # Run markdownlint on Markdown files known to Git (respects .gitignore)
 markdownlint: init
