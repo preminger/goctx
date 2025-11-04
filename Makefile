@@ -3,23 +3,22 @@ SHELL := /bin/bash
 # Repository root directory
 REPO_ROOT := $(shell git rev-parse --show-toplevel)
 
-.PHONY: init lint markdownlint test test-unit build release
+.PHONY: init lint markdownlint test test-go build release
 
 # Determine path to svu binary using go env (prefers GOBIN over GOPATH/bin)
 SVU_BIN := $(shell bash -lc 'if [ -n "$$(/usr/bin/env go env GOBIN)" ]; then echo "$$(/usr/bin/env go env GOBIN)/svu"; else echo "$$(/usr/bin/env go env GOPATH)/bin/svu"; fi')
 
 # Install required developer tools via Homebrew Brewfile and set up Husky git hooks
 init:
-	brew bundle install
-	# Install Node dev deps (for Husky) and set up hooks on clone
+	@brew bundle install
 	@if command -v npm >/dev/null 2>&1; then \
 		npm ci || npm install; \
 	else \
 		echo "npm not found; skipping Husky install. Git hooks may not be configured."; \
 	fi
-	# Point Git to Husky-managed hooks directory
-	git config core.hooksPath .husky
-	chmod +x .husky/pre-push || true
+	@git config core.hooksPath .husky
+	@chmod +x .husky/pre-push || true
+	@go mod tidy
 
 # Run markdownlint on Markdown files known to Git (respects .gitignore)
 markdownlint: init
@@ -35,19 +34,21 @@ markdownlint: init
 lint: markdownlint init
 	golangci-lint run --fix --allow-parallel-runners
 
-# Aggregate test target: runs lint and unit tests with coverage
+# Aggregate test target: runs lint and go tests with coverage
 # (no commands of its own)
-test: lint test-unit init
+test: lint test-go init
 
-# Run unit tests with coverage and generate HTML report
+# Run Go tests with coverage and generate HTML report
 # Outputs:
 #  - coverage.out   (coverage profile)
 #  - coverage.html  (HTML report)
 # Also prints the total coverage line to stdout
-test-unit: init
-	set -euo pipefail; \
-	go test ./... -coverprofile=coverage.out -covermode=atomic; \
-	go tool cover -func=coverage.out | tail -n 1; \
+test-go: init
+	@set -euo pipefail; \
+	echo ""; \
+	echo "RUNNING GO TESTS..."; \
+	echo ""; \
+	go tool gotestsum -f pkgname-and-test-fails -- -v ./... -count 1 -coverprofile=coverage.out -covermode=atomic; \
 	go tool cover -html=coverage.out -o coverage.html
 
 # Build artifacts using GoReleaser
