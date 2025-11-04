@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.4] - 2025-11-03
+
+### Added
+
+- Use `gotestsum` for human-readable `go test` output.
+
+### Changed
+
+- Makefile target for running Go tests renamed from `test-unit` to `test-go`.
+- Added `-count 1` flag to Go test command-line to circumvent test caching.
+
 ## [0.8.3] - 2025-11-03
 
 ### Fixed
@@ -127,7 +138,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.8.3...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.8.4...HEAD
+[0.8.4]: https://github.com/preminger/goctx/compare/v0.8.3...v0.8.4
 [0.8.3]: https://github.com/preminger/goctx/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/preminger/goctx/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/preminger/goctx/compare/v0.8.0...v0.8.1
