@@ -60,7 +60,7 @@ resolution is ambiguous and the tool will ask you to disambiguate by line number
 				return fmt.Errorf("parsing html: %w", err)
 			}
 
-			verbose, err := cmd.Flags().GetBool(OptNameVerbose)
+			verbose, err := cmd.PersistentFlags().GetBool(OptNameVerbose)
 			if err != nil {
 				return fmt.Errorf("parsing verbose: %w", err)
 			}
@@ -85,6 +85,10 @@ resolution is ambiguous and the tool will ask you to disambiguate by line number
 			return goctx.Run(cmd.Context(), opts)
 		},
 	}
+
+	rootCmd.Flags().String(OptNameStopAt, "", "Optional terminating function path of the form path/to/file.go:FuncName[:N]")
+	rootCmd.Flags().Bool(OptNameHTTP, false, "Terminate at http.HandlerFunc boundaries and derive ctx from req.Context()")
+	rootCmd.PersistentFlags().BoolP(OptNameVerbose, OptNameVerboseShortHand, false, "Verbose output")
 
 	return rootCmd
 }
