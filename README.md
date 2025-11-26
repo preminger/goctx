@@ -222,13 +222,13 @@ Behavior summary:
 
 The repository contains end-to-end test inputs and golden outputs under:
 
-- internal/contextualize/testdata/input/
-- internal/contextualize/testdata/golden/
+- pkg/goctx/testdata/input/
+- pkg/goctx/testdata/golden/
 
 You can inspect pairs like these to understand before/after transformations:
 
-- internal/contextualize/testdata/input/e2e_ctxparam_blank_to_ctx/main.go
-- internal/contextualize/testdata/golden/e2e_ctxparam_blank_to_ctx_main_go.golden
+- pkg/goctx/testdata/input/e2e_ctxparam_blank_to_ctx/main.go
+- pkg/goctx/testdata/golden/e2e_ctxparam_blank_to_ctx_main_go.golden
 
 There are additional scenarios covering propagation across multiple packages and HTTP boundaries.
 
@@ -273,8 +273,8 @@ make build
 
 - app/goctx: CLI entrypoint (main package), produces the `goctx` binary
 - cmd/goctx: Cobra command and flags
-- internal/contextualize: Core analysis and rewrite logic
-- internal/contextualize/testdata: End-to-end fixtures used by tests (input and golden files)
+- pkg/goctx: Core analysis and rewrite logic
+- pkg/goctx/testdata: End-to-end fixtures used by tests (input and golden files)
 
 ## Troubleshooting
 
