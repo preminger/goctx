@@ -9,7 +9,7 @@ import (
 	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
 
-	"github.com/preminger/goctx/internal/contextualize"
+	"github.com/preminger/goctx/pkg/goctx"
 )
 
 const shortDescription = "Command-line Go utility that automatically adds missing 'plumbing' for `context.Context` parameters along the call-graph leading to a given function."
@@ -75,14 +75,14 @@ resolution is ambiguous and the tool will ask you to disambiguate by line number
 				return cmd.Help()
 			}
 
-			opts := contextualize.Options{
+			opts := goctx.Options{
 				Target:  args[0],
 				StopAt:  stopAt,
 				HTML:    httpMode,
 				WorkDir: ".",
 			}
 
-			return contextualize.Run(cmd.Context(), opts)
+			return goctx.Run(cmd.Context(), opts)
 		},
 	}
 
