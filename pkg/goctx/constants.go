@@ -1,4 +1,4 @@
-package contextualize
+package goctx
 
 const FuncNameMain = "main"
 const VarNameCtx = "ctx"

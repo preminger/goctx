@@ -1,4 +1,4 @@
-package contextualize
+package goctx
 
 import (
 	"fmt"

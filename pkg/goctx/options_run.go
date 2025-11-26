@@ -1,4 +1,4 @@
-package contextualize
+package goctx
 
 import (
 	"bytes"
@@ -15,7 +15,7 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// Options configures the contextualization run.
+// Options configures the goctx run.
 // WorkDir should point at the module root (or any subdir); we will load ./...
 // Target syntax: path/to/file.go:FuncName[:N]
 // StopAt optional syntax: same as Target.
@@ -27,7 +27,7 @@ type Options struct {
 	WorkDir string
 }
 
-// Run performs the contextualization according to Options.
+// Run performs the goctx according to Options.
 func Run(_ context.Context, opts Options) error {
 	if opts.Target == "" {
 		return errors.New("missing target argument")

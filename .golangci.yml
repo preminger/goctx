@@ -423,7 +423,7 @@ linters:
       - third_party$
       - builtin$
       - examples$
-      - ^internal/contextualize/testdata($|/)
+      - ^pkg/goctx/testdata($|/)
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0

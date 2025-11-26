@@ -3,11 +3,13 @@ package goctx
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/charmbracelet/fang"
+	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
 
-	"github.com/preminger/goctx/internal/contextualize"
+	"github.com/preminger/goctx/pkg/goctx"
 )
 
 const shortDescription = "Command-line Go utility that automatically adds missing 'plumbing' for `context.Context` parameters along the call-graph leading to a given function."
@@ -35,9 +37,18 @@ resolution is ambiguous and the tool will ask you to disambiguate by line number
 		Version: OverallVersionString(ctx),
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(cmd.Flags().Args()) < 1 {
-				return cmd.Help()
-			}
+			logHandler := log.NewWithOptions(
+				cmd.OutOrStdout(),
+				log.Options{
+					Level:           log.WarnLevel, // Setting this to lowest possible value, since slog will handle the actual filtering.
+					ReportTimestamp: true,
+					ReportCaller:    true,
+				},
+			)
+			logger := slog.New(logHandler)
+			slog.SetDefault(logger)
+
+			slog.Debug("logger initialized")
 
 			stopAt, err := cmd.Flags().GetString(OptNameStopAt)
 			if err != nil {
@@ -49,18 +60,35 @@ resolution is ambiguous and the tool will ask you to disambiguate by line number
 				return fmt.Errorf("parsing html: %w", err)
 			}
 
-			opts := contextualize.Options{
+			verbose, err := cmd.PersistentFlags().GetBool(OptNameVerbose)
+			if err != nil {
+				return fmt.Errorf("parsing verbose: %w", err)
+			}
+
+			if verbose {
+				logHandler.SetLevel(log.DebugLevel)
+			}
+
+			slog.Debug("options parsed")
+
+			if len(cmd.Flags().Args()) < 1 {
+				return cmd.Help()
+			}
+
+			opts := goctx.Options{
 				Target:  args[0],
 				StopAt:  stopAt,
 				HTML:    httpMode,
 				WorkDir: ".",
 			}
-			if err := contextualize.Run(cmd.Context(), opts); err != nil {
-				return fmt.Errorf("running contextualize: %w", err)
-			}
-			return nil
+
+			return goctx.Run(cmd.Context(), opts)
 		},
 	}
+
+	rootCmd.Flags().String(OptNameStopAt, "", "Optional terminating function path of the form path/to/file.go:FuncName[:N]")
+	rootCmd.Flags().Bool(OptNameHTTP, false, "Terminate at http.HandlerFunc boundaries and derive ctx from req.Context()")
+	rootCmd.PersistentFlags().BoolP(OptNameVerbose, OptNameVerboseShortHand, false, "Verbose output")
 
 	return rootCmd
 }
