@@ -1,4 +1,8 @@
 package goctx
 
-const OptNameStopAt = "stop-at"
-const OptNameHTTP = "http"
+const (
+	OptNameHTTP             = "http"
+	OptNameStopAt           = "stop-at"
+	OptNameVerbose          = "verbose"
+	OptNameVerboseShortHand = "v"
+)

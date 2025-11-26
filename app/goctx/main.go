@@ -19,6 +19,7 @@ func actualMain() int {
 
 	rootCmd.Flags().String(goctx.OptNameStopAt, "", "Optional terminating function path of the form path/to/file.go:FuncName[:N]")
 	rootCmd.Flags().Bool(goctx.OptNameHTTP, false, "Terminate at http.HandlerFunc boundaries and derive ctx from req.Context()")
+	rootCmd.Flags().BoolP(goctx.OptNameVerbose, goctx.OptNameVerboseShortHand, false, "Verbose output")
 
 	if err := goctx.ExecuteWithFang(ctx, rootCmd); err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
