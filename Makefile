@@ -1,4 +1,5 @@
 SHELL := /bin/bash
+export HOMEBREW_NO_ANALYTICS := 1
 
 # Repository root directory
 REPO_ROOT := $(shell git rev-parse --show-toplevel)

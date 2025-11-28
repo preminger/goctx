@@ -1,5 +1,8 @@
 name: release
 
+env:
+  HOMEBREW_NO_ANALYTICS: '1'
+
 defaults:
   run:
     shell: bash
