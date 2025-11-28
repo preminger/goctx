@@ -10,11 +10,12 @@ SVU_BIN := $(shell bash -lc 'if [ -n "$$(/usr/bin/env go env GOBIN)" ]; then ech
 
 # Install required developer tools via Homebrew Brewfile and set up Husky git hooks
 init:
-	@brew bundle install
-	@if command -v npm >/dev/null 2>&1; then \
-		npm ci || npm install; \
+	@if [ -n "$$CI" ]; then \
+	  brew bundle --no-upgrade --file=Brewfile; \
+	  echo "CI: skipping npm install; handled by workflow cache"; \
 	else \
-		echo "npm not found; skipping Husky install. Git hooks may not be configured."; \
+	  brew bundle --file=Brewfile; \
+	  npm ci || npm install; \
 	fi
 	@git config core.hooksPath .husky
 	@chmod +x .husky/pre-push || true
