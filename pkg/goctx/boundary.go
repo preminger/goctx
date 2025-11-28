@@ -5,6 +5,7 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+	"log/slog"
 
 	"golang.org/x/tools/go/packages"
 )
@@ -26,11 +27,13 @@ func shouldStopAt(funcDecl *ast.FuncDecl, pkg *packages.Package, opts Options, s
 		if sameFile(pkg, funcDecl, stopSpec) && funcDecl.Name.Name == stopSpec.FuncName {
 			// If no line number was provided, any matching function name in the file qualifies
 			if stopSpec.LineNumber < 1 {
+				slog.Debug("stopAt matched by name", slog.String("func", funcDecl.Name.Name))
 				return true, StopReasonStopAt
 			}
 			// When a line number was provided, ensure it matches the function's starting line
 			start := pkg.Fset.Position(funcDecl.Pos()).Line
 			if start == stopSpec.LineNumber {
+				slog.Debug("stopAt matched by line", slog.String("func", funcDecl.Name.Name), slog.Int("line", start))
 				return true, StopReasonStopAt
 			}
 		}
@@ -39,12 +42,14 @@ func shouldStopAt(funcDecl *ast.FuncDecl, pkg *packages.Package, opts Options, s
 	// html handler boundary
 	if opts.HTML {
 		if isHTTPHandlerFunc(funcDecl, pkg) {
+			slog.Debug("stop at HTTP boundary", slog.String("func", funcDecl.Name.Name))
 			return true, StopReasonHTTP
 		}
 	}
 
 	// main termination
 	if isMainFunction(funcDecl, pkg) {
+		slog.Debug("stop at main function", slog.String("func", funcDecl.Name.Name))
 		return true, StopReasonMain
 	}
 
@@ -98,6 +103,7 @@ func isHTTPHandlerFunc(fn *ast.FuncDecl, pkg *packages.Package) bool {
 // If reason is OptNameHTTP: inserts ctx := <req>.Context() where <req> is the name of the *http.Request parameter.
 func ensureCtxAvailableAtBoundary(pkg *packages.Package, file *ast.File, fn *ast.FuncDecl, reason StopReason) (bool, error) {
 	if hasCtxInScope(fn, pkg) {
+		slog.Debug("ctx already in scope at boundary", slog.String("func", fn.Name.Name))
 		return true, nil
 	}
 	switch reason {
@@ -105,6 +111,7 @@ func ensureCtxAvailableAtBoundary(pkg *packages.Package, file *ast.File, fn *ast
 		ensureImport(pkg.Fset, file, "context")
 		stmt := makeAssignCtxBackground()
 		insertAfterLeadingBlankAssignsF(pkg.Fset, file, fn, stmt)
+		slog.Debug("inserted ctx := context.Background()", slog.String("func", fn.Name.Name))
 		return true, nil
 	case StopReasonHTTP:
 		reqName := findHTTPRequestParamName(fn, pkg)
@@ -113,6 +120,7 @@ func ensureCtxAvailableAtBoundary(pkg *packages.Package, file *ast.File, fn *ast
 		}
 		stmt := makeAssignCtxFromRequest(reqName)
 		insertAfterLeadingBlankAssignsF(pkg.Fset, file, fn, stmt)
+		slog.Debug("inserted ctx := req.Context()", slog.String("func", fn.Name.Name), slog.String("req", reqName))
 		return true, nil
 	default:
 		return false, nil

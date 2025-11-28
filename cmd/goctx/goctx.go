@@ -69,7 +69,7 @@ resolution is ambiguous and the tool will ask you to disambiguate by line number
 				logHandler.SetLevel(log.DebugLevel)
 			}
 
-			slog.Debug("options parsed")
+			slog.Debug("flags parsed", slog.String("stopAt", stopAt), slog.Bool("html", httpMode), slog.Bool("verbose", verbose), slog.Int("argc", len(cmd.Flags().Args())))
 
 			if len(cmd.Flags().Args()) < 1 {
 				return cmd.Help()
@@ -82,6 +82,7 @@ resolution is ambiguous and the tool will ask you to disambiguate by line number
 				WorkDir: ".",
 			}
 
+			slog.Debug("invoking run", slog.String("target", opts.Target), slog.String("stopAt", opts.StopAt), slog.Bool("html", opts.HTML), slog.String("workDir", opts.WorkDir))
 			return goctx.Run(cmd.Context(), opts)
 		},
 	}

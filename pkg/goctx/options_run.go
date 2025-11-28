@@ -9,6 +9,7 @@ import (
 	"go/format"
 	"go/token"
 	"go/types"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -29,6 +30,12 @@ type Options struct {
 
 // Run performs the goctx according to Options.
 func Run(_ context.Context, opts Options) error {
+	slog.Debug("run start",
+		slog.String("target", opts.Target),
+		slog.String("stopAt", opts.StopAt),
+		slog.Bool("html", opts.HTML),
+		slog.String("workDir", firstNonEmpty(opts.WorkDir, ".")),
+	)
 	if opts.Target == "" {
 		return errors.New("missing target argument")
 	}
@@ -36,20 +43,29 @@ func Run(_ context.Context, opts Options) error {
 	// Load all packages in the workspace
 	pkgs, err := loadAllPackages(firstNonEmpty(opts.WorkDir, "."))
 	if err != nil {
+		slog.Debug("loadAllPackages error", slog.String("workDir", firstNonEmpty(opts.WorkDir, ".")), slog.Any("error", err))
 		return err
 	}
+	slog.Debug("packages loaded", slog.Int("count", len(pkgs)))
 
 	// Parse target and optional stopAt
 	tgtSpec, err := parseTargetSpec(opts.Target)
 	if err != nil {
 		return fmt.Errorf("parsing target: %w", err)
 	}
+	slog.Debug("target parsed", slog.String("file", tgtSpec.File), slog.String("func", tgtSpec.FuncName), slog.Int("line", tgtSpec.LineNumber))
 	stopSpec, err := parseStopSpec(opts.StopAt)
 	if err != nil {
 		var noStop noStopSpecError
 		if !errors.As(err, &noStop) {
+			slog.Debug("stopAt parse error", slog.String("stopAt", opts.StopAt), slog.Any("error", err))
 			return err
 		}
+	}
+	if stopSpec != nil {
+		slog.Debug("stopAt parsed", slog.String("file", stopSpec.File), slog.String("func", stopSpec.FuncName), slog.Int("line", stopSpec.LineNumber))
+	} else {
+		slog.Debug("stopAt not provided")
 	}
 
 	// Find the package and file for the target
@@ -57,11 +73,16 @@ func Run(_ context.Context, opts Options) error {
 	if err != nil {
 		return fmt.Errorf("resolving target: %w", err)
 	}
+	slog.Debug("target resolved",
+		slog.String("file", res.Fset.File(res.Decl.Pos()).Name()),
+		slog.String("func", res.Decl.Name.Name),
+	)
 
 	modifiedFiles := map[string]bool{}
 
 	// Decide if target already has a usable context.Context parameter (reuse case)
 	reuseExistingCtxInTarget := functionHasContextParam(res.Decl, res.Info)
+	slog.Debug("target context param check", slog.Bool("hasContextParam", reuseExistingCtxInTarget))
 
 	// Ensure target function has ctx param (do not rename blank yet)
 	ensureTargetHasCtx(res, modifiedFiles)
@@ -69,26 +90,33 @@ func Run(_ context.Context, opts Options) error {
 	// Traverse callers recursively and propagate ctx as needed, unless the target already has a context parameter
 	var sawAnyCall bool
 	if !reuseExistingCtxInTarget {
+		slog.Debug("traverse and propagate start")
 		if err := traverseAndPropagate(pkgs, res.Obj, opts, stopSpec, modifiedFiles, &sawAnyCall); err != nil {
+			slog.Debug("traverse and propagate error", slog.Any("error", err))
 			return err
 		}
+		slog.Debug("traverse and propagate done", slog.Bool("sawAnyCall", sawAnyCall))
 	}
 
 	// If the target has a blank-named context param and there are no callers,
 	// rename it to ctx (covers the dedicated rename test case) without affecting
 	// the case where callers exist and we should preserve '_'.
 	maybeRenameBlankCtxInTarget(res, modifiedFiles, sawAnyCall)
+	slog.Debug("maybe renamed blank ctx in target", slog.Bool("sawAnyCall", sawAnyCall))
 
 	// Write back modified files
 	if err := writeModified(pkgs); err != nil {
+		slog.Debug("write modified error", slog.Any("error", err))
 		return fmt.Errorf("writing modified files: %w", err)
 	}
+	slog.Debug("run done")
 
 	return nil
 }
 
 // loadAllPackages loads all packages in the workspace rooted at dir.
 func loadAllPackages(dir string) ([]*packages.Package, error) {
+	slog.Debug("loading packages", slog.String("dir", dir))
 	cfg := &packages.Config{
 		Mode: packages.NeedName |
 			packages.NeedFiles |
@@ -108,6 +136,7 @@ func loadAllPackages(dir string) ([]*packages.Package, error) {
 	// Still print errors for visibility but continue.
 	_ = packages.PrintErrors(pkgs)
 
+	slog.Debug("packages loaded", slog.Int("count", len(pkgs)))
 	return pkgs, nil
 }
 
@@ -303,17 +332,19 @@ func markFileModified(mod map[string]bool, fset *token.FileSet, file *ast.File) 
 
 // writeModified writes all package files back using canonical gofmt formatting.
 func writeModified(pkgs []*packages.Package) error {
-	for _, p := range pkgs {
-		for _, syntaxTree := range p.Syntax {
-			filename := p.Fset.File(syntaxTree.Pos()).Name()
+	for _, thePkg := range pkgs {
+		for _, syntaxTree := range thePkg.Syntax {
+			filename := thePkg.Fset.File(syntaxTree.Pos()).Name()
+			slog.Debug("writing file", slog.String("file", filename))
 			var buf bytes.Buffer
 			// Format using go/format to preserve standard gofmt style and comments
-			if err := format.Node(&buf, p.Fset, syntaxTree); err != nil {
+			if err := format.Node(&buf, thePkg.Fset, syntaxTree); err != nil {
 				return fmt.Errorf("formatting file %s: %w", filename, err)
 			}
 			if err := os.WriteFile(filename, buf.Bytes(), 0o644); err != nil { //nolint:gosec // Appropriate permissions for source files
 				return fmt.Errorf("writing file %s: %w", filename, err)
 			}
+			slog.Debug("wrote file", slog.String("file", filename))
 		}
 	}
 

@@ -5,6 +5,7 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
+	"log/slog"
 	"path/filepath"
 
 	"golang.org/x/tools/go/packages"
@@ -33,6 +34,7 @@ type targetResolution struct {
 // resolveTarget locates the target function declaration and its types.Object.
 // It now returns a targetResolution pointer and an error.
 func resolveTarget(pkgs []*packages.Package, spec targetSpec) (*targetResolution, error) {
+	slog.Debug("resolveTarget start", slog.String("file", spec.File), slog.String("func", spec.FuncName), slog.Int("line", spec.LineNumber))
 	absFile, err := filepath.Abs(spec.File)
 	if err != nil {
 		return nil, fmt.Errorf("resolving absolute path: %w", err)
@@ -72,7 +74,10 @@ func resolveTarget(pkgs []*packages.Package, spec targetSpec) (*targetResolution
 				if obj == nil {
 					return nil, fmt.Errorf("resolving function object for %s", spec.FuncName)
 				}
-				return &targetResolution{Pkg: pkg, FileAST: fileAST, Fset: pkg.Fset, Info: pkg.TypesInfo, Decl: decl, Obj: obj}, nil
+				tr := &targetResolution{Pkg: pkg, FileAST: fileAST, Fset: pkg.Fset, Info: pkg.TypesInfo, Decl: decl, Obj: obj}
+				slog.Debug("resolveTarget found by line", slog.String("file", pkg.Fset.File(decl.Pos()).Name()), slog.String("func", decl.Name.Name), slog.Int("line", spec.LineNumber))
+
+				return tr, nil
 			}
 			// No line provided
 			if len(candidates) > 1 {
@@ -86,7 +91,10 @@ func resolveTarget(pkgs []*packages.Package, spec targetSpec) (*targetResolution
 			if obj == nil {
 				return nil, fmt.Errorf("resolving function object for %s", spec.FuncName)
 			}
-			return &targetResolution{Pkg: pkg, FileAST: fileAST, Fset: pkg.Fset, Info: pkg.TypesInfo, Decl: decl, Obj: obj}, nil
+			tr := &targetResolution{Pkg: pkg, FileAST: fileAST, Fset: pkg.Fset, Info: pkg.TypesInfo, Decl: decl, Obj: obj}
+			slog.Debug("resolveTarget found", slog.String("file", pkg.Fset.File(decl.Pos()).Name()), slog.String("func", decl.Name.Name))
+
+			return tr, nil
 		}
 	}
 

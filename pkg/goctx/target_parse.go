@@ -3,6 +3,7 @@ package goctx
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -18,6 +19,7 @@ type targetSpec struct {
 var targetRe = regexp.MustCompile(`^([^:]+):(\w+)(?::(\d+))?$`)
 
 func parseTargetSpec(specStr string) (targetSpec, error) {
+	slog.Debug("parseTargetSpec start", slog.String("spec", strings.TrimSpace(specStr)))
 	specStr = filepath.ToSlash(strings.TrimSpace(specStr))
 	matches := targetRe.FindStringSubmatch(specStr)
 	if matches == nil {
@@ -32,5 +34,8 @@ func parseTargetSpec(specStr string) (targetSpec, error) {
 		ord = v
 	}
 
-	return targetSpec{File: matches[1], FuncName: matches[2], LineNumber: ord}, nil
+	spec := targetSpec{File: matches[1], FuncName: matches[2], LineNumber: ord}
+	slog.Debug("parseTargetSpec done", slog.String("file", spec.File), slog.String("func", spec.FuncName), slog.Int("line", spec.LineNumber))
+
+	return spec, nil
 }
