@@ -4,6 +4,13 @@ export HOMEBREW_NO_ANALYTICS := 1
 # Repository root directory
 REPO_ROOT := $(shell git rev-parse --show-toplevel)
 
+NUM_PROCESSORS := $(shell bash $(REPO_ROOT)/nprocs.sh 2>/dev/null || echo "1")
+ifeq ($(NUM_PROCESSORS),)
+NUM_PROCESSORS := 1
+endif
+
+export GOMAXPROCS="$(NUM_PROCESSORS)"
+
 .PHONY: init lint markdownlint test test-go build release
 
 # Determine path to svu binary using go env (prefers GOBIN over GOPATH/bin)
@@ -50,13 +57,13 @@ test-go: init
 	echo ""; \
 	echo "RUNNING GO TESTS..."; \
 	echo ""; \
-	go tool gotestsum -f pkgname-and-test-fails -- -v ./... -count 1 -coverprofile=coverage.out -covermode=atomic; \
+	go tool gotestsum -f pkgname-and-test-fails -- -v -p $(NUM_PROCESSORS) -parallel $(NUM_PROCESSORS) ./... -count 1 -coverprofile=coverage.out -covermode=atomic; \
 	go tool cover -html=coverage.out -o coverage.html
 
 # Build artifacts using GoReleaser
 # Uses snapshot mode so it doesn't require a VCS tag or publish a release
 build: init
-	goreleaser build --snapshot --clean
+	goreleaser --parallelism $(NUM_PROCESSORS) build --snapshot --clean
 
 # Create and push a new git tag based on semantic version analysis by svu
 # Requires a clean working tree and an "origin" remote.
@@ -65,4 +72,4 @@ release: init
 	echo "Computed tag for next version: $$VERSION"; \
 	git tag "$$VERSION"; \
 	git push --tags; \
-	goreleaser release --clean
+	goreleaser --parallelism $(NUM_PROCESSORS) release --clean

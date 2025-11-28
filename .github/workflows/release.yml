@@ -31,6 +31,14 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Set MAKEFLAGS for parallel builds
+        run: |
+          cores="$(bash ./nprocs.sh 2>/dev/null || true)"
+          if [ -z "$cores" ]; then cores=1; fi
+          echo "MAKEFLAGS=-j${cores}" >> "$GITHUB_ENV"
+          echo "GOMAXPROCS=${cores}" >> "$GITHUB_ENV"
+          echo "Number of cores: ${cores}"
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
