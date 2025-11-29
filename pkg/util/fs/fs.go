@@ -30,7 +30,9 @@ func TruePath(path string) (string, error) {
 			prevResolvedPath = resolvedPath
 			changeFound = true
 		}
+
+		path = resolvedPath
 	}
 
-	return prevResolvedPath, nil
+	return path, nil
 }
