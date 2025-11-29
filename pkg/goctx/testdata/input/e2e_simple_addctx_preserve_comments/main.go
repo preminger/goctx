@@ -6,12 +6,12 @@ import (
 	"fmt" // say hello
 )
 
-// DoThing does something.
+// FuncInNeedOfContext does something.
 // It should get a ctx parameter inserted, but comments must remain.
-func DoThing() {
+func FuncInNeedOfContext() {
 	fmt.Println("hi") // inline comment
 }
 
 func main() {
-	DoThing()
+	FuncInNeedOfContext()
 }

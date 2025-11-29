@@ -31,7 +31,7 @@ func TestE2E_Simple_AddCtx_PreservesComments(t *testing.T) {
 	g := goldie.New(t, goldie.WithFixtureDir(fixturesDir(t)))
 	dir := writeTempModuleFromInput(t, "e2e_simple_addctx_preserve_comments")
 
-	target := filepath.Join(dir, "main.go") + ":DoThing"
+	target := filepath.Join(dir, "main.go") + ":FuncInNeedOfContext"
 	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
 		t.Fatalf("Run error: %v", err)
 	}

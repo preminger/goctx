@@ -6,15 +6,15 @@ import (
 )
 
 func TestParseTargetSpec_OK(t *testing.T) {
-	sp, err := parseTargetSpec("pkg/foo.go:DoThing")
+	sp, err := parseTargetSpec("pkg/foo.go:FuncInNeedOfContext")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if sp.File != filepath.ToSlash("pkg/foo.go") || sp.FuncName != "DoThing" || sp.LineNumber != 0 {
+	if sp.File != filepath.ToSlash("pkg/foo.go") || sp.FuncName != "FuncInNeedOfContext" || sp.LineNumber != 0 {
 		t.Fatalf("unexpected spec: %+v", sp)
 	}
 
-	sp, err = parseTargetSpec("pkg/foo.go:DoThing:2")
+	sp, err = parseTargetSpec("pkg/foo.go:FuncInNeedOfContext:2")
 	if err != nil {
 		to := sp
 		_ = to

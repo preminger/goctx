@@ -27,13 +27,16 @@ Where N is the 1-based line number of the function/method declaration.
 If you omit N and multiple functions with the same name exist in the file,
 resolution is ambiguous and the tool will ask you to disambiguate by line number.`,
 		Example: `  # Target a function by name
-  goctx ./pkg/foo.go:DoThing
+  goctx ./internal/foo/bar.go:FuncInNeedOfContext
 
   # Disambiguate by 1-based line number of the declaration
-  goctx ./pkg/foo.go:DoThing:42
+  goctx ./internal/foo/bar.go:FuncInNeedOfContext:42
 
   # Stop propagation at another function (also supports :N)
-  goctx --stop-at ./pkg/stop.go:Boundary ./pkg/foo.go:DoThing`,
+  goctx --stop-at ./internal/foo/baz.go:FuncServingAsBoundary ./internal/foo/bar.go:FuncInNeedOfContext
+
+  NOTE: goctx will not work unless you have a 'go.mod' file.
+  That's because it uses Go internals to parse your code into packages!`,
 		Version: OverallVersionStringColorized(ctx),
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
