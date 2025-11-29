@@ -3,9 +3,13 @@ package goctx
 import (
 	"context"
 	"fmt"
+	"os"
 	"runtime/debug"
 	"strings"
 	"time"
+
+	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/fang"
 )
 
 // Version is the CLI version. It can be overridden at build time via:
@@ -145,4 +149,43 @@ func OverallVersionString(ctx context.Context) string {
 	}
 
 	return out.String()
+}
+
+// getFangScheme returns the same light/dark-aware color scheme fang uses.
+func getFangScheme() fang.ColorScheme {
+	// This mirrors fang.mustColorscheme(DefaultColorScheme)
+	isDark := lipgloss.HasDarkBackground(os.Stdin, os.Stdout)
+	return fang.DefaultColorScheme(lipgloss.LightDark(isDark))
+}
+
+// OverallVersionStringColorized renders a version line with fang-consistent colors.
+func OverallVersionStringColorized(ctx context.Context) string {
+	cs := getFangScheme()
+
+	// Pick styles that align with fang’s help palette
+	versionStyle := lipgloss.NewStyle().Foreground(cs.Command)  // program name color
+	commitStyle := lipgloss.NewStyle().Foreground(cs.Program)   // subcommand color
+	timeStyle := lipgloss.NewStyle().Foreground(cs.Flag)        // dimmed args
+	sepStyle := lipgloss.NewStyle().Foreground(cs.QuotedString) // neutral separator
+
+	var parts []string
+
+	// Version
+	parts = append(parts, versionStyle.Render(EffectiveVersion(ctx)))
+
+	// Commit
+	if c := EffectiveCommit(ctx); c != "" {
+		parts = append(parts, commitStyle.Render(c))
+	}
+
+	// Build time
+	if t, ok := EffectiveBuildTimeParsed(); ok {
+		local := t.In(time.Local)
+		parts = append(parts, timeStyle.Render(local.Format(time.RFC3339)))
+	} else if raw := EffectiveBuildTime(); raw != "" {
+		parts = append(parts, timeStyle.Render(raw))
+	}
+
+	// Use a subdued separator consistent with help body text
+	return strings.Join(parts, sepStyle.Render("-"))
 }
