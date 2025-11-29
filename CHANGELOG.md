@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2025-11-28
+
+### Added
+
+- Colorization of version string in `goctx --version`.
+
 ## [0.9.4] - 2025-11-28
 
 ### Changed
@@ -188,7 +194,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.9.4...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/preminger/goctx/compare/v0.9.4...v0.10.0
 [0.9.4]: https://github.com/preminger/goctx/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/preminger/goctx/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/preminger/goctx/compare/v0.9.1...v0.9.2
