@@ -163,10 +163,10 @@ func OverallVersionStringColorized(ctx context.Context) string {
 	cs := getFangScheme()
 
 	// Pick styles that align with fang’s help palette
-	versionStyle := lipgloss.NewStyle().Foreground(cs.Command)  // program name color
-	commitStyle := lipgloss.NewStyle().Foreground(cs.Program)   // subcommand color
-	timeStyle := lipgloss.NewStyle().Foreground(cs.Flag)        // dimmed args
-	sepStyle := lipgloss.NewStyle().Foreground(cs.QuotedString) // neutral separator
+	versionStyle := lipgloss.NewStyle().Foreground(cs.QuotedString) // program name color
+	commitStyle := lipgloss.NewStyle().Foreground(cs.Program)       // subcommand color
+	timeStyle := lipgloss.NewStyle().Foreground(cs.Flag)            // dimmed args
+	sepStyle := lipgloss.NewStyle().Foreground(cs.Base)             // neutral separator
 
 	var parts []string
 
