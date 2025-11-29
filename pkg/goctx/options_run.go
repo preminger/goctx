@@ -102,7 +102,6 @@ func Run(_ context.Context, opts Options) error {
 	// rename it to ctx (covers the dedicated rename test case) without affecting
 	// the case where callers exist and we should preserve '_'.
 	maybeRenameBlankCtxInTarget(res, modifiedFiles, sawAnyCall)
-	slog.Debug("maybe renamed blank ctx in target", slog.Bool("sawAnyCall", sawAnyCall))
 
 	// Write back modified files
 	if err := writeModified(pkgs); err != nil {

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.3] - 2025-11-28
+
+### Removed
+
+- Removed a misleading debug log message.
+
 ## [0.10.2] - 2025-11-28
 
 ### Fixed
@@ -206,7 +212,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.10.2...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.10.3...HEAD
+[0.10.3]: https://github.com/preminger/goctx/compare/v0.10.2...v0.10.3
 [0.10.2]: https://github.com/preminger/goctx/compare/v0.10.1...v0.10.2
 [0.10.1]: https://github.com/preminger/goctx/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/preminger/goctx/compare/v0.9.4...v0.10.0
