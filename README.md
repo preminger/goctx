@@ -196,6 +196,10 @@ Notes:
 - The optional `:N` suffix can be used if there are multiple functions with the same name in the file and you want to disambiguate by line number (N is the 1-based starting line of the function).
 - The tool will rename a blank `_` `context.Context` parameter to `ctx` in the target when needed.
 
+>[!NOTE]
+> goctx will NOT work unless you have a `go.mod` file.
+> That's because it uses Go internals to parse your code into packages!
+
 ## Usage
 
 The CLI surface is intentionally small. Flags are also visible via `goctx --help`.
