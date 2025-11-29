@@ -176,13 +176,13 @@ Examples:
 - Add/propagate ctx into a function and its callers:
 
 ```shell
-goctx ./internal/foo/bar.go:DoThing
+goctx ./internal/foo/bar.go:FuncInNeedOfContext
 ```
 
 - Stop propagation at an explicit boundary function:
 
 ```shell
-goctx --stop-at ./internal/foo/baz.go:BoundaryFunc ./internal/foo/bar.go:DoThing
+goctx --stop-at ./internal/foo/baz.go:FuncServingAsBoundary ./internal/foo/bar.go:FuncInNeedOfContext
 ```
 
 - Stop at HTTP boundaries and derive ctx from `req.Context()` automatically:

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.5] - 2025-11-29
+
+### Changed
+
+- Misc. documentation improvements
+
 ## [0.10.4] - 2025-11-28
 
 ### Fixed
@@ -218,7 +224,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.10.4...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.10.5...HEAD
+[0.10.5]: https://github.com/preminger/goctx/compare/v0.10.4...v0.10.5
 [0.10.4]: https://github.com/preminger/goctx/compare/v0.10.3...v0.10.4
 [0.10.3]: https://github.com/preminger/goctx/compare/v0.10.2...v0.10.3
 [0.10.2]: https://github.com/preminger/goctx/compare/v0.10.1...v0.10.2
