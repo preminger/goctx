@@ -274,7 +274,11 @@ func processCallSites(params processCallSitesParams) error {
 			return true
 		}
 
-		stopHere, stopReason := shouldStopAt(enc, params.pkg, params.opts, params.stopSpec)
+		stopHere, stopReason, err := shouldStopAt(enc, params.pkg, params.opts, params.stopSpec)
+		if err != nil {
+			inspectErr = fmt.Errorf("checking stop boundary: %w", err)
+			return false
+		}
 
 		if stopHere {
 			// At stop boundary: ensure a ctx exists, derive if necessary (main/http) and always pass ctx to call

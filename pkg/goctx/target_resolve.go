@@ -6,8 +6,8 @@ import (
 	"go/token"
 	"go/types"
 	"log/slog"
-	"path/filepath"
 
+	"github.com/preminger/goctx/pkg/util/fs"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -35,9 +35,9 @@ type targetResolution struct {
 // It now returns a targetResolution pointer and an error.
 func resolveTarget(pkgs []*packages.Package, spec targetSpec) (*targetResolution, error) {
 	slog.Debug("resolveTarget start", slog.String("file", spec.File), slog.String("func", spec.FuncName), slog.Int("line", spec.LineNumber))
-	absFile, err := filepath.Abs(spec.File)
+	absFile, err := fs.TruePath(spec.File)
 	if err != nil {
-		return nil, fmt.Errorf("resolving absolute path: %w", err)
+		return nil, fmt.Errorf("ascertaining true path: %w", err)
 	}
 	for _, pkg := range pkgs {
 		for _, fileAST := range pkg.Syntax {
@@ -45,9 +45,9 @@ func resolveTarget(pkgs []*packages.Package, spec targetSpec) (*targetResolution
 			if posFile == nil {
 				continue
 			}
-			fp, err := filepath.Abs(posFile.Name())
+			fp, err := fs.TruePath(posFile.Name())
 			if err != nil {
-				return nil, fmt.Errorf("resolving absolute path: %w", err)
+				return nil, fmt.Errorf("ascertaining true path: %w", err)
 			}
 
 			if fp != absFile {
@@ -116,25 +116,25 @@ func findFuncDeclsByName(file *ast.File, name string) []*ast.FuncDecl {
 	return out
 }
 
-func sameFile(p *packages.Package, fn *ast.FuncDecl, spec *targetSpec) bool {
+func sameFile(p *packages.Package, fn *ast.FuncDecl, spec *targetSpec) (bool, error) {
 	if spec == nil {
-		return false
+		return false, nil
 	}
 	fi := p.Fset.File(fn.Pos())
 	if fi == nil {
-		return false
+		return false, nil
 	}
-	abs1, err := filepath.Abs(fi.Name())
+	abs1, err := fs.TruePath(fi.Name())
 	if err != nil {
-		return false
+		return false, fmt.Errorf("ascertaining true path: %w", err)
 	}
 
-	abs2, err := filepath.Abs(spec.File)
+	abs2, err := fs.TruePath(spec.File)
 	if err != nil {
-		return false
+		return false, fmt.Errorf("ascertaining true path: %w", err)
 	}
 
-	return abs1 == abs2
+	return abs1 == abs2, nil
 }
 
 func enclosingFuncDecl(file *ast.File, targetNode ast.Node) *ast.FuncDecl {

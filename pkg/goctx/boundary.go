@@ -2,6 +2,7 @@ package goctx
 
 import (
 	"errors"
+	"fmt"
 	"go/ast"
 	"go/token"
 	"go/types"
@@ -21,20 +22,25 @@ const (
 
 // shouldStopAt evaluates termination conditions for the given enclosing function.
 // Returns (true, reason) when we should not propagate further upward.
-func shouldStopAt(funcDecl *ast.FuncDecl, pkg *packages.Package, opts Options, stopSpec *targetSpec) (bool, StopReason) {
+func shouldStopAt(funcDecl *ast.FuncDecl, pkg *packages.Package, opts Options, stopSpec *targetSpec) (bool, StopReason, error) {
 	// stop-at specific
 	if stopSpec != nil {
-		if sameFile(pkg, funcDecl, stopSpec) && funcDecl.Name.Name == stopSpec.FuncName {
+		isSameFile, err := sameFile(pkg, funcDecl, stopSpec)
+		if err != nil {
+			return false, StopReasonNone, fmt.Errorf("determining if stop-at is in same file: %w", err)
+		}
+
+		if isSameFile && funcDecl.Name.Name == stopSpec.FuncName {
 			// If no line number was provided, any matching function name in the file qualifies
 			if stopSpec.LineNumber < 1 {
 				slog.Debug("stopAt matched by name", slog.String("func", funcDecl.Name.Name))
-				return true, StopReasonStopAt
+				return true, StopReasonStopAt, nil
 			}
 			// When a line number was provided, ensure it matches the function's starting line
 			start := pkg.Fset.Position(funcDecl.Pos()).Line
 			if start == stopSpec.LineNumber {
 				slog.Debug("stopAt matched by line", slog.String("func", funcDecl.Name.Name), slog.Int("line", start))
-				return true, StopReasonStopAt
+				return true, StopReasonStopAt, nil
 			}
 		}
 	}
@@ -43,17 +49,17 @@ func shouldStopAt(funcDecl *ast.FuncDecl, pkg *packages.Package, opts Options, s
 	if opts.HTML {
 		if isHTTPHandlerFunc(funcDecl, pkg) {
 			slog.Debug("stop at HTTP boundary", slog.String("func", funcDecl.Name.Name))
-			return true, StopReasonHTTP
+			return true, StopReasonHTTP, nil
 		}
 	}
 
 	// main termination
 	if isMainFunction(funcDecl, pkg) {
 		slog.Debug("stop at main function", slog.String("func", funcDecl.Name.Name))
-		return true, StopReasonMain
+		return true, StopReasonMain, nil
 	}
 
-	return false, StopReasonNone
+	return false, StopReasonNone, nil
 }
 
 func isMainFunction(fn *ast.FuncDecl, pkg *packages.Package) bool {
