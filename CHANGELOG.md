@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2025-11-29
+
+### Changed
+
+- Changed build system from make to [mage](https://magefile.org/).
+
 ## [0.10.8] - 2025-11-29
 
 ### Changed
@@ -242,7 +248,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.10.8...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/preminger/goctx/compare/v0.10.8...v0.11.0
 [0.10.8]: https://github.com/preminger/goctx/compare/v0.10.7...v0.10.8
 [0.10.7]: https://github.com/preminger/goctx/compare/v0.10.6...v0.10.7
 [0.10.6]: https://github.com/preminger/goctx/compare/v0.10.5...v0.10.6

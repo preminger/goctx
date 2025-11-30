@@ -113,11 +113,16 @@ jobs:
         if: steps.brew_install.outputs.cache-hit != 'true'
         run: brew bundle --no-upgrade --file=Brewfile
 
+      - name: Run Mage
+        uses: magefile/mage-action@v3
+        with:
+          install-only: true
+
       - name: Project init (CI-safe)
-        run: make init
+        run: mage init
 
       - name: Run tests
-        run: make test
+        run: mage test
 
       - name: Configure git user
         run: |
@@ -126,7 +131,7 @@ jobs:
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Perform release
-        run: make release
+        run: mage release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
