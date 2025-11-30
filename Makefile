@@ -63,6 +63,7 @@ test-go: init
 # Build artifacts using GoReleaser
 # Uses snapshot mode so it doesn't require a VCS tag or publish a release
 build: init
+	@goreleaser check && \
 	goreleaser --parallelism $(NUM_PROCESSORS) build --snapshot --clean
 
 # Create and push a new git tag based on semantic version analysis by svu

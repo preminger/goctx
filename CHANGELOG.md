@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.7] - 2025-11-29
+
+### Added
+
+- Add `goreleaser check` step to Makefile `build` target.
+
 ## [0.10.6] - 2025-11-29
 
 ### Changed
@@ -230,7 +236,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.10.6...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.10.7...HEAD
+[0.10.7]: https://github.com/preminger/goctx/compare/v0.10.6...v0.10.7
 [0.10.6]: https://github.com/preminger/goctx/compare/v0.10.5...v0.10.6
 [0.10.5]: https://github.com/preminger/goctx/compare/v0.10.4...v0.10.5
 [0.10.4]: https://github.com/preminger/goctx/compare/v0.10.3...v0.10.4
