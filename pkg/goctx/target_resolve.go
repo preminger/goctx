@@ -7,8 +7,9 @@ import (
 	"go/types"
 	"log/slog"
 
-	"github.com/preminger/goctx/pkg/util/fs"
 	"golang.org/x/tools/go/packages"
+
+	"github.com/preminger/goctx/pkg/util/fs"
 )
 
 // targetResolution bundles the data about a resolved target function.

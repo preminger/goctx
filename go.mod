@@ -6,6 +6,8 @@ require (
 	charm.land/lipgloss/v2 v2.0.0-beta.3.0.20251106193318-19329a3e8410
 	github.com/charmbracelet/fang v0.4.4
 	github.com/charmbracelet/log v0.4.2
+	github.com/magefile/mage v1.15.0
+	github.com/samber/lo v1.52.0
 	github.com/sebdah/goldie/v2 v2.8.0
 	github.com/spf13/cobra v1.10.1
 	github.com/stretchr/testify v1.11.1
