@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.8] - 2025-11-29
+
+### Changed
+
+- Some light refactoring of cmd/goctx/version.go
+
 ## [0.10.7] - 2025-11-29
 
 ### Added
@@ -236,7 +242,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.10.7...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.10.8...HEAD
+[0.10.8]: https://github.com/preminger/goctx/compare/v0.10.7...v0.10.8
 [0.10.7]: https://github.com/preminger/goctx/compare/v0.10.6...v0.10.7
 [0.10.6]: https://github.com/preminger/goctx/compare/v0.10.5...v0.10.6
 [0.10.5]: https://github.com/preminger/goctx/compare/v0.10.4...v0.10.5

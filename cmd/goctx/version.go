@@ -2,14 +2,13 @@ package goctx
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"runtime/debug"
 	"strings"
 	"time"
 
 	"charm.land/lipgloss/v2"
-	"github.com/charmbracelet/fang"
+
+	"github.com/preminger/goctx/internal/ui"
 )
 
 // Version is the CLI version. It can be overridden at build time via:
@@ -133,34 +132,33 @@ func parseRFC3339MaybeNano(v string) (time.Time, bool) {
 	return time.Time{}, false
 }
 
+// OverallVersionString renders a version line with fang-consistent colors.
 func OverallVersionString(ctx context.Context) string {
-	var out strings.Builder
-	fmt.Fprintf(&out, "%s", EffectiveVersion(ctx))
+	var parts []string
+
+	// Version
+	parts = append(parts, EffectiveVersion(ctx))
+
+	// Commit
 	if c := EffectiveCommit(ctx); c != "" {
-		fmt.Fprintf(&out, "-%s", c)
+		parts = append(parts, c)
 	}
+
+	// Build time
 	if t, ok := EffectiveBuildTimeParsed(); ok {
 		local := t.In(time.Local)
-		// Use a readable local format including zone name
-		fmt.Fprintf(&out, "-%s", local.Format(time.RFC3339))
+		parts = append(parts, local.Format(time.RFC3339))
 	} else if raw := EffectiveBuildTime(); raw != "" {
-		// Fallback to raw string if parsing failed but value exists
-		fmt.Fprintf(&out, "-%s", raw)
+		parts = append(parts, raw)
 	}
 
-	return out.String()
-}
-
-// getFangScheme returns the same light/dark-aware color scheme fang uses.
-func getFangScheme() fang.ColorScheme {
-	// This mirrors fang.mustColorscheme(DefaultColorScheme)
-	isDark := lipgloss.HasDarkBackground(os.Stdin, os.Stdout)
-	return fang.DefaultColorScheme(lipgloss.LightDark(isDark))
+	// Use a subdued separator consistent with help body text
+	return strings.Join(parts, "-")
 }
 
 // OverallVersionStringColorized renders a version line with fang-consistent colors.
 func OverallVersionStringColorized(ctx context.Context) string {
-	cs := getFangScheme()
+	cs := ui.GetFangScheme()
 
 	// Pick styles that align with fang’s help palette
 	versionStyle := lipgloss.NewStyle().Foreground(cs.QuotedString) // program name color
