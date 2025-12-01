@@ -138,7 +138,8 @@ func loadAllPackages(dir string) ([]*packages.Package, error) {
 			packages.NeedTypes |
 			packages.NeedTypesInfo |
 			packages.NeedSyntax,
-		Dir: loadDir,
+		Dir:   loadDir,
+		Tests: true, // include _test.go files and test variants
 	}
 	pkgs, err := packages.Load(cfg, "./...")
 	if err != nil {

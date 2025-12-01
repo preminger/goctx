@@ -17,6 +17,7 @@ const (
 	StopReasonNone StopReason = iota
 	StopReasonMain
 	StopReasonHTTP
+	StopReasonTest
 	StopReasonStopAt
 )
 
@@ -43,6 +44,12 @@ func shouldStopAt(funcDecl *ast.FuncDecl, pkg *packages.Package, opts Options, s
 				return true, StopReasonStopAt, nil
 			}
 		}
+	}
+
+	// testing boundary: any function with testing.T, testing.B, testing.F, or testing.TB (or pointer)
+	if isTestingBoundary(funcDecl, pkg) {
+		slog.Debug("stop at testing boundary", slog.String("func", funcDecl.Name.Name))
+		return true, StopReasonTest, nil
 	}
 
 	// html handler boundary
@@ -127,6 +134,20 @@ func ensureCtxAvailableAtBoundary(pkg *packages.Package, file *ast.File, fn *ast
 		stmt := makeAssignCtxFromRequest(reqName)
 		insertAfterLeadingBlankAssignsF(pkg.Fset, file, fn, stmt)
 		slog.Debug("inserted ctx := req.Context()", slog.String("func", fn.Name.Name), slog.String("req", reqName))
+		return true, nil
+	case StopReasonTest:
+		testName := findTestingParamName(fn, pkg)
+		if testName == "" {
+			// Fall back to background if we cannot determine a testing param name (should be rare)
+			ensureImport(pkg.Fset, file, "context")
+			stmt := makeAssignCtxBackground()
+			insertAfterLeadingBlankAssignsF(pkg.Fset, file, fn, stmt)
+			slog.Debug("inserted ctx := context.Background() (fallback for testing boundary)", slog.String("func", fn.Name.Name))
+			return true, nil
+		}
+		stmt := makeAssignCtxFromTesting(testName)
+		insertAfterLeadingBlankAssignsF(pkg.Fset, file, fn, stmt)
+		slog.Debug("inserted ctx := t.Context()", slog.String("func", fn.Name.Name), slog.String("t", testName))
 		return true, nil
 	default:
 		return false, nil
@@ -227,6 +248,15 @@ func makeAssignCtxFromRequest(req string) ast.Stmt {
 		Lhs: []ast.Expr{ast.NewIdent(VarNameCtx)},
 		Tok: token.DEFINE,
 		Rhs: []ast.Expr{&ast.CallExpr{Fun: &ast.SelectorExpr{X: ast.NewIdent(req), Sel: ast.NewIdent("Context")}}},
+	}
+}
+
+func makeAssignCtxFromTesting(tvar string) ast.Stmt {
+	// ctx := <tvar>.Context()
+	return &ast.AssignStmt{
+		Lhs: []ast.Expr{ast.NewIdent(VarNameCtx)},
+		Tok: token.DEFINE,
+		Rhs: []ast.Expr{&ast.CallExpr{Fun: &ast.SelectorExpr{X: ast.NewIdent(tvar), Sel: ast.NewIdent("Context")}}},
 	}
 }
 
@@ -334,4 +364,60 @@ func getCtxIdentInScope(fn *ast.FuncDecl, pkg *packages.Package) string {
 
 func hasCtxInScope(fn *ast.FuncDecl, pkg *packages.Package) bool {
 	return getCtxIdentInScope(fn, pkg) != ""
+}
+
+// isTestingBoundary reports whether the function has a parameter of type testing.T, testing.B,
+// testing.F, or testing.TB (or a pointer to any of these), indicating a Go test entry point.
+func isTestingBoundary(fn *ast.FuncDecl, pkg *packages.Package) bool {
+	if fn == nil || fn.Type == nil || fn.Type.Params == nil {
+		return false
+	}
+	for _, field := range fn.Type.Params.List {
+		if isTestingParamType(pkg, field.Type) {
+			return true
+		}
+	}
+	return false
+}
+
+func isTestingParamType(pkg *packages.Package, expr ast.Expr) bool {
+	if expr == nil {
+		return false
+	}
+	theType := pkg.TypesInfo.TypeOf(expr)
+	// Unwrap pointers
+	if pt, ok := theType.(*types.Pointer); ok {
+		theType = pt.Elem()
+	}
+	// Named types from testing package: T, B, F, TB
+	if named, ok := theType.(*types.Named); ok {
+		if named.Obj() == nil || named.Obj().Pkg() == nil {
+			return false
+		}
+		if named.Obj().Pkg().Path() != "testing" {
+			return false
+		}
+		switch named.Obj().Name() {
+		case "T", "B", "F", "TB":
+			return true
+		}
+	}
+	return false
+}
+
+// findTestingParamName returns the identifier name of the testing parameter (t, b, f, tb, etc.).
+// If unnamed, it returns a sensible default "t".
+func findTestingParamName(fn *ast.FuncDecl, pkg *packages.Package) string {
+	if fn == nil || fn.Type == nil || fn.Type.Params == nil {
+		return ""
+	}
+	for _, field := range fn.Type.Params.List {
+		if isTestingParamType(pkg, field.Type) {
+			if len(field.Names) > 0 && field.Names[0] != nil && field.Names[0].Name != "" && field.Names[0].Name != "_" {
+				return field.Names[0].Name
+			}
+			return "t"
+		}
+	}
+	return ""
 }
