@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.2] - 2025-11-29
+
+### Added
+
+- CHANGELOG.md catch-up.
+
+## [0.11.1] - 2025-11-29
+
+### Changed
+
+- Update documentation to reflect move to [mage](https://magefile.org/) (contributed by [James Ainslie](https://github.com/jamesainslie)).
+
 ## [0.11.0] - 2025-11-29
 
 ### Changed
@@ -248,7 +260,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.11.0...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.11.2...HEAD
+[0.11.2]: https://github.com/preminger/goctx/compare/v0.11.1...v0.11.2
+[0.11.1]: https://github.com/preminger/goctx/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/preminger/goctx/compare/v0.10.8...v0.11.0
 [0.10.8]: https://github.com/preminger/goctx/compare/v0.10.7...v0.10.8
 [0.10.7]: https://github.com/preminger/goctx/compare/v0.10.6...v0.10.7
