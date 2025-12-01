@@ -158,10 +158,10 @@ You can install the CLI via Homebrew, with `go install`, or build from source.
     go build -o bin/goctx ./app/goctx
     ```
 
-  - Using the provided Makefile and GoReleaser (snapshot build):
+  - Using Mage and GoReleaser (snapshot build):
 
     ```shell
-    make build
+    mage build
     ```
 
   Artifacts will be placed under the `dist/` directory when using GoReleaser.
@@ -241,36 +241,43 @@ There are additional scenarios covering propagation across multiple packages and
 Requirements:
 
 - Go (a recent version per go.mod)
+- [Mage](https://magefile.org/) build tool
 - Optional: Homebrew for developer tooling via Brewfile
 
 Setup developer tools via Homebrew:
 
 ```shell
-make init
+mage init
 ```
 
 Lint:
 
 ```shell
-make lint
+mage lint
 ```
 
-Run tests with coverage (also generates coverage.html):
+Run Go tests with coverage (generates coverage.out and coverage.html):
 
 ```shell
-make test-unit
+mage testGo
 ```
 
-Or run both lint and unit tests:
+Or run lint and Go tests together:
 
 ```shell
-make test
+mage test
 ```
 
 Run a snapshot build using GoReleaser:
 
 ```shell
-make build
+mage build
+```
+
+Run all targets (init, test, build):
+
+```shell
+mage
 ```
 
 ### Project layout
