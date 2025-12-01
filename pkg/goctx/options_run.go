@@ -11,6 +11,7 @@ import (
 	"go/types"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
@@ -113,9 +114,21 @@ func Run(_ context.Context, opts Options) error {
 	return nil
 }
 
-// loadAllPackages loads all packages in the workspace rooted at dir.
+// loadAllPackages loads all packages in the current Go module that contains dir.
+// Previously, we loaded only the subtree under dir ("./..."). This missed parent
+// directories that belong to the same module when dir is a subdirectory.
+// Now we discover the module root (by locating the nearest go.mod upwards from dir)
+// and set packages.Config.Dir to that root, ensuring the entire module is loaded.
 func loadAllPackages(dir string) ([]*packages.Package, error) {
 	slog.Debug("loading packages", slog.String("dir", dir))
+
+	moduleRoot := findModuleRoot(dir)
+	loadDir := dir
+	if moduleRoot != "" {
+		loadDir = moduleRoot
+	}
+	slog.Debug("resolved load dir", slog.String("loadDir", loadDir))
+
 	cfg := &packages.Config{
 		Mode: packages.NeedName |
 			packages.NeedFiles |
@@ -125,7 +138,7 @@ func loadAllPackages(dir string) ([]*packages.Package, error) {
 			packages.NeedTypes |
 			packages.NeedTypesInfo |
 			packages.NeedSyntax,
-		Dir: dir,
+		Dir: loadDir,
 	}
 	pkgs, err := packages.Load(cfg, "./...")
 	if err != nil {
@@ -137,6 +150,33 @@ func loadAllPackages(dir string) ([]*packages.Package, error) {
 
 	slog.Debug("packages loaded", slog.Int("count", len(pkgs)))
 	return pkgs, nil
+}
+
+// findModuleRoot walks up from startDir to find the nearest directory containing a go.mod.
+// Returns the directory path if found; otherwise returns empty string.
+func findModuleRoot(startDir string) string {
+	// Normalize path
+	dir := startDir
+	if dir == "" {
+		if wd, err := os.Getwd(); err == nil {
+			dir = wd
+		}
+	}
+	// Convert to absolute for consistent traversal
+	if abs, err := filepath.Abs(dir); err == nil {
+		dir = abs
+	}
+	for {
+		gm := filepath.Join(dir, "go.mod")
+		if st, err := os.Stat(gm); err == nil && !st.IsDir() {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir { // reached filesystem root
+			return ""
+		}
+		dir = parent
+	}
 }
 
 // maybeRenameBlankCtxInTarget renames a blank-named context parameter to ctx for the target function
