@@ -258,3 +258,108 @@ func TestE2E_Methods_Propagation(t *testing.T) {
 		g.Assert(t, "e2e_methods2_main_go", []byte(normalizeNewlines(string(b))))
 	})
 }
+
+func TestE2E_ModuleWide_FromSubdir(t *testing.T) {
+	ctx := t.Context()
+	g := goldie.New(t, goldie.WithFixtureDir(fixturesDir(t)))
+	dir := writeTempModuleFromInput(t, "e2e_modulewide_subdir")
+
+	// Run from the subdirectory where the target file resides, while callers exist outside of it.
+	subdir := filepath.Join(dir, "sub")
+	target := filepath.Join(subdir, "mylib.go") + ":FuncInNeedOfContext"
+	if err := Run(ctx, Options{Target: target, WorkDir: subdir}); err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+
+	// Assert both the target file in subdir and the caller in parent (main.go) were updated.
+	bSub, err := os.ReadFile(filepath.Join(subdir, "mylib.go"))
+	if err != nil {
+		t.Fatalf("read sub/mylib.go: %v", err)
+	}
+	bMain, err := os.ReadFile(filepath.Join(dir, "main.go"))
+	if err != nil {
+		t.Fatalf("read main.go: %v", err)
+	}
+	g.Assert(t, "e2e_modulewide_subdir_mylib_go", []byte(normalizeNewlines(string(bSub))))
+	g.Assert(t, "e2e_modulewide_subdir_main_go", []byte(normalizeNewlines(string(bMain))))
+}
+
+func TestE2E_Handle_TestFiles_TargetIsTestAndCallsitesInTests(t *testing.T) {
+	ctx := t.Context()
+	g := goldie.New(t, goldie.WithFixtureDir(fixturesDir(t)))
+	dir := writeTempModuleFromInput(t, "e2e_tests_target_in_test")
+
+	target := filepath.Join(dir, "helper_test.go") + ":HelperTarget"
+	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+	bHelper, err := os.ReadFile(filepath.Join(dir, "helper_test.go"))
+	if err != nil {
+		t.Fatalf("read helper_test.go: %v", err)
+	}
+	bCaller, err := os.ReadFile(filepath.Join(dir, "util_test.go"))
+	if err != nil {
+		t.Fatalf("read util_test.go: %v", err)
+	}
+	g.Assert(t, "e2e_tests_target_in_test_helper_test_go", []byte(normalizeNewlines(string(bHelper))))
+	g.Assert(t, "e2e_tests_target_in_test_util_test_go", []byte(normalizeNewlines(string(bCaller))))
+}
+
+func TestE2E_Handle_TestFiles_CallsitesInTestsForProdFunc(t *testing.T) {
+	ctx := t.Context()
+	g := goldie.New(t, goldie.WithFixtureDir(fixturesDir(t)))
+	dir := writeTempModuleFromInput(t, "e2e_tests_callsites_in_tests")
+
+	target := filepath.Join(dir, "util.go") + ":ProdFunc"
+	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+	bUtil, err := os.ReadFile(filepath.Join(dir, "util.go"))
+	if err != nil {
+		t.Fatalf("read util.go: %v", err)
+	}
+	bTest, err := os.ReadFile(filepath.Join(dir, "util_test.go"))
+	if err != nil {
+		t.Fatalf("read util_test.go: %v", err)
+	}
+	g.Assert(t, "e2e_tests_callsites_in_tests_util_go", []byte(normalizeNewlines(string(bUtil))))
+	g.Assert(t, "e2e_tests_callsites_in_tests_util_test_go", []byte(normalizeNewlines(string(bTest))))
+}
+
+func TestE2E_Distinguish_Functions_Methods_And_Qualified(t *testing.T) {
+	ctx := t.Context()
+	g := goldie.New(t, goldie.WithFixtureDir(fixturesDir(t)))
+	dir := writeTempModuleFromInput(t, "e2e_distinguish_calls")
+
+	target := filepath.Join(dir, "main.go") + ":MyFunc"
+	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+	b, err := os.ReadFile(filepath.Join(dir, "main.go"))
+	if err != nil {
+		t.Fatalf("read main.go: %v", err)
+	}
+	g.Assert(t, "e2e_distinguish_calls_main_go", []byte(normalizeNewlines(string(b))))
+}
+
+func TestE2E_OnlyOneCtxParam_WhenCallingTwoCallees(t *testing.T) {
+	ctx := t.Context()
+	g := goldie.New(t, goldie.WithFixtureDir(fixturesDir(t)))
+	dir := writeTempModuleFromInput(t, "e2e_single_ctx_for_multiple_calls")
+
+	// Run twice to simulate two separate operations: first adding ctx to MyOtherFunc1 callers,
+	// then to MyOtherFunc2 callers. MyFunc should only get one ctx parameter in total.
+	target1 := filepath.Join(dir, "main.go") + ":MyOtherFunc1"
+	if err := Run(ctx, Options{Target: target1, WorkDir: dir}); err != nil {
+		t.Fatalf("Run #1 error: %v", err)
+	}
+	target2 := filepath.Join(dir, "main.go") + ":MyOtherFunc2"
+	if err := Run(ctx, Options{Target: target2, WorkDir: dir}); err != nil {
+		t.Fatalf("Run #2 error: %v", err)
+	}
+	b, err := os.ReadFile(filepath.Join(dir, "main.go"))
+	if err != nil {
+		t.Fatalf("read main.go: %v", err)
+	}
+	g.Assert(t, "e2e_single_ctx_for_multiple_calls_main_go", []byte(normalizeNewlines(string(b))))
+}
