@@ -285,10 +285,29 @@ func findHTTPRequestParamName(fn *ast.FuncDecl, p *packages.Package) string {
 	return ""
 }
 
-func ensureCallHasCtxArg(_ *packages.Package, call *ast.CallExpr, ctxName string) {
+func ensureCallHasCtxArg(pkg *packages.Package, call *ast.CallExpr, ctxName string) {
 	if ctxName == "" {
 		ctxName = VarNameCtx
 	}
+	// If there's already a first argument and it's either the same identifier name
+	// or it is of type context.Context, avoid adding a duplicate.
+	if len(call.Args) > 0 {
+		// Case 1: first arg is an ident with the same name (ctx)
+		if id, ok := call.Args[0].(*ast.Ident); ok {
+			if id.Name == ctxName {
+				return
+			}
+		}
+		// Case 2: first arg type is context.Context
+		if pkg != nil && pkg.TypesInfo != nil {
+			if t := pkg.TypesInfo.TypeOf(call.Args[0]); t != nil {
+				if types.TypeString(t, func(p *types.Package) string { return p.Path() }) == ContextContext {
+					return
+				}
+			}
+		}
+	}
+
 	// Prepend ctx ident to arguments
 	call.Args = append([]ast.Expr{ast.NewIdent(ctxName)}, call.Args...)
 }
