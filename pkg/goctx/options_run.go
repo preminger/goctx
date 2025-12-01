@@ -285,20 +285,26 @@ func processCallSites(params processCallSitesParams) error {
 			return true
 		}
 		var calledObj types.Object
-		var funName string
-		switch fun := call.Fun.(type) {
+		var funcName string
+		switch theExpr := call.Fun.(type) {
 		case *ast.Ident:
-			calledObj = params.pkg.TypesInfo.Uses[fun]
-			funName = fun.Name
+			calledObj = params.pkg.TypesInfo.Uses[theExpr]
+			funcName = theExpr.Name
 		case *ast.SelectorExpr:
-			calledObj = params.pkg.TypesInfo.Uses[fun.Sel]
-			funName = fun.Sel.Name
+			calledObj = params.pkg.TypesInfo.Uses[theExpr.Sel]
+			funcName = theExpr.Sel.Name
 		}
 		match := calledObj == params.curr
 		if !match {
-			// Fallback by name and package path to be resilient to partial type info
-			if funName != "" && params.curr != nil && params.curr.Pkg() != nil && params.pkg.PkgPath == params.curr.Pkg().Path() && funName == params.curr.Name() {
-				match = true
+			// Safer fallback only when there is no resolved object (e.g., partial type info),
+			// and only for free-standing functions within the same package invoked as identifiers.
+			if calledObj == nil && funcName != "" && params.curr != nil && params.curr.Pkg() != nil && funcName == params.curr.Name() {
+				if sig, ok := params.curr.Type().(*types.Signature); ok && sig.Recv() == nil {
+					// Free function. Only consider identifier calls inside the same package.
+					if _, isIdent := call.Fun.(*ast.Ident); isIdent && params.pkg.PkgPath == params.curr.Pkg().Path() {
+						match = true
+					}
+				}
 			}
 		}
 		if !match {
