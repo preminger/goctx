@@ -8,11 +8,23 @@ import (
 
 type TypeA struct{}
 
-func (TypeA) Func() { fmt.Println("TypeA.Func") }
+func (_ *TypeA) MyFunc() int {
+	fmt.Println("TypeA.Func")
 
-type TypeB struct{ Func int }
+	return -1
+}
 
-func MyFunc() { fmt.Println("MyFunc") }
+type TypeB struct{}
+
+func (_ TypeB) MyFunc() int {
+	fmt.Println("TypeB.Func")
+
+	return -2
+}
+
+func MyFunc() {
+	fmt.Println("MyFunc")
+}
 
 func main() {
 	// unqualified function in current package
@@ -23,9 +35,9 @@ func main() {
 
 	// method call on a value
 	var a TypeA
-	a.Func()
+	a.MyFunc()
 
 	// field access, not a call
 	var b TypeB
-	_ = b.Func
+	_ = b.MyFunc()
 }

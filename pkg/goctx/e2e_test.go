@@ -5,10 +5,14 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/sebdah/goldie/v2"
+	"github.com/stretchr/testify/require"
+
+	"github.com/preminger/goctx/pkg/util/fsutils"
 )
 
 func genGoldie(t *testing.T) *goldie.Goldie {
@@ -26,12 +30,11 @@ func fixturesDir(t *testing.T) string {
 	return filepath.Join(filepath.Dir(file), "testdata", "golden", t.Name())
 }
 
-func normalizeNewlines(s string) string {
-	if runtime.GOOS == "windows" {
-		return strings.ReplaceAll(s, "\r\n", "\n")
-	}
+func normalizeNewlines(inBytes []byte) []byte {
+	inStr := string(inBytes)
+	inStr = strings.ReplaceAll(inStr, "\r\n", "\n")
 
-	return s
+	return []byte(inStr)
 }
 
 // inputDir returns the path to testdata/input alongside this test file.
@@ -89,185 +92,145 @@ func copyDir(t *testing.T, src, dst string) error {
 }
 
 func TestE2E_Simple_AddCtx_PreservesComments(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 	g := genGoldie(t)
 	dir := writeTempModuleFromInput(t)
 
 	target := filepath.Join(dir, "main.go") + ":FuncInNeedOfContext"
-	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
-		t.Fatalf("Run error: %v", err)
-	}
+	require.NoError(t, Run(ctx, Options{Target: target, WorkDir: dir}))
 	// Read back file and compare golden
-	b, err := os.ReadFile(filepath.Join(dir, "main.go"))
-	if err != nil {
-		t.Fatalf("read result: %v", err)
-	}
-	g.Assert(t, "main.go", []byte(normalizeNewlines(string(b))))
+	b := fsutils.MustRead(filepath.Join(dir, "main.go"))
+	g.Assert(t, "main.go", normalizeNewlines(b))
 }
 
 func TestE2E_Propagate_StopAtMain_PreservesComments(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 	g := genGoldie(t)
 	dir := writeTempModuleFromInput(t)
 	target := filepath.Join(dir, "a", "b.go") + ":Callee"
-	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
-		t.Fatalf("Run error: %v", err)
-	}
-	bA, err := os.ReadFile(filepath.Join(dir, "a", "a.go"))
-	if err != nil {
-		t.Fatalf("read a.go: %v", err)
-	}
-	bB, err := os.ReadFile(filepath.Join(dir, "a", "b.go"))
-	if err != nil {
-		t.Fatalf("read b.go: %v", err)
-	}
+	require.NoError(t, Run(ctx, Options{Target: target, WorkDir: dir}))
+	bA := fsutils.MustRead(filepath.Join(dir, "a", "a.go"))
+	bB := fsutils.MustRead(filepath.Join(dir, "a", "b.go"))
 	bMain, err := os.ReadFile(filepath.Join(dir, "main.go"))
 	if err != nil {
 		t.Fatalf("read main.go: %v", err)
 	}
-	g.Assert(t, "a.go", []byte(normalizeNewlines(string(bA))))
-	g.Assert(t, "b.go", []byte(normalizeNewlines(string(bB))))
-	g.Assert(t, "main.go", []byte(normalizeNewlines(string(bMain))))
+	g.Assert(t, "a.go", normalizeNewlines(bA))
+	g.Assert(t, "b.go", normalizeNewlines(bB))
+	g.Assert(t, "main.go", normalizeNewlines(bMain))
 }
 
 func TestE2E_HTTPBoundary_PreservesComments(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 	g := genGoldie(t)
 	dir := writeTempModuleFromInput(t)
 	target := filepath.Join(dir, "srv", "srv.go") + ":inner"
-	if err := Run(ctx, Options{Target: target, WorkDir: dir, HTML: true}); err != nil {
-		t.Fatalf("Run error: %v", err)
-	}
-	b, err := os.ReadFile(filepath.Join(dir, "srv", "srv.go"))
-	if err != nil {
-		t.Fatalf("read srv.go: %v", err)
-	}
-	g.Assert(t, "srv.go", []byte(normalizeNewlines(string(b))))
+	require.NoError(t, Run(ctx, Options{Target: target, WorkDir: dir, HTML: true}))
+	b := fsutils.MustRead(filepath.Join(dir, "srv", "srv.go"))
+	g.Assert(t, "srv.go", normalizeNewlines(b))
 }
 
 func TestE2E_RenameBlankCtxParamToCtx(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 	g := genGoldie(t)
 	dir := writeTempModuleFromInput(t)
 	target := filepath.Join(dir, "main.go") + ":target"
-	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
-		t.Fatalf("Run error: %v", err)
-	}
-	b, err := os.ReadFile(filepath.Join(dir, "main.go"))
-	if err != nil {
-		t.Fatalf("read main.go: %v", err)
-	}
-	g.Assert(t, "main.go", []byte(normalizeNewlines(string(b))))
+	require.NoError(t, Run(ctx, Options{Target: target, WorkDir: dir}))
+	b := fsutils.MustRead(filepath.Join(dir, "main.go"))
+	g.Assert(t, "main.go", normalizeNewlines(b))
 }
 
 func TestE2E_UseExistingNamedContextParam(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 	g := genGoldie(t)
 	dir := writeTempModuleFromInput(t)
 	target := filepath.Join(dir, "main.go") + ":target"
-	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
-		t.Fatalf("Run error: %v", err)
-	}
-	b, err := os.ReadFile(filepath.Join(dir, "main.go"))
-	if err != nil {
-		t.Fatalf("read main.go: %v", err)
-	}
-	g.Assert(t, "main.go", []byte(normalizeNewlines(string(b))))
+	require.NoError(t, Run(ctx, Options{Target: target, WorkDir: dir}))
+	b := fsutils.MustRead(filepath.Join(dir, "main.go"))
+	g.Assert(t, "main.go", normalizeNewlines(b))
 }
 
 func TestE2E_UseExistingBlankContextParam(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 	g := genGoldie(t)
 	dir := writeTempModuleFromInput(t)
 	target := filepath.Join(dir, "main.go") + ":target"
-	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
-		t.Fatalf("Run error: %v", err)
-	}
-	b, err := os.ReadFile(filepath.Join(dir, "main.go"))
-	if err != nil {
-		t.Fatalf("read main.go: %v", err)
-	}
-	g.Assert(t, "main.go", []byte(normalizeNewlines(string(b))))
+	require.NoError(t, Run(ctx, Options{Target: target, WorkDir: dir}))
+	b := fsutils.MustRead(filepath.Join(dir, "main.go"))
+	g.Assert(t, "main.go", normalizeNewlines(b))
 }
 
 func TestE2E_ReuseExisting_Blank_Midlevel(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 	g := genGoldie(t)
 	dir := writeTempModuleFromInput(t)
 	target := filepath.Join(dir, "main.go") + ":target"
-	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
-		t.Fatalf("Run error: %v", err)
-	}
-	b, err := os.ReadFile(filepath.Join(dir, "main.go"))
-	if err != nil {
-		t.Fatalf("read main.go: %v", err)
-	}
-	g.Assert(t, "main.go", []byte(normalizeNewlines(string(b))))
+	require.NoError(t, Run(ctx, Options{Target: target, WorkDir: dir}))
+	b := fsutils.MustRead(filepath.Join(dir, "main.go"))
+	g.Assert(t, "main.go", normalizeNewlines(b))
 }
 
 func TestE2E_LineNumberDisambiguation(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 	g := genGoldie(t)
 	dir := writeTempModuleFromInput(t)
 	// The (A) target starts at line 6 in the fixture
 	target := filepath.Join(dir, "main.go") + ":target:6"
-	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
-		t.Fatalf("Run error: %v", err)
-	}
-	b, err := os.ReadFile(filepath.Join(dir, "main.go"))
-	if err != nil {
-		t.Fatalf("read main.go: %v", err)
-	}
-	g.Assert(t, "main.go", []byte(normalizeNewlines(string(b))))
+	require.NoError(t, Run(ctx, Options{Target: target, WorkDir: dir}))
+	b := fsutils.MustRead(filepath.Join(dir, "main.go"))
+	g.Assert(t, "main.go", normalizeNewlines(b))
 }
 
 func TestE2E_BigExample(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 	g := genGoldie(t)
 	dir := writeTempModuleFromInput(t)
 	target := filepath.Join(dir, "main.go") + ":targetFunc"
-	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
-		t.Fatalf("Run error: %v", err)
-	}
-	b, err := os.ReadFile(filepath.Join(dir, "main.go"))
-	if err != nil {
-		t.Fatalf("read main.go: %v", err)
-	}
-	g.Assert(t, "main.go", []byte(normalizeNewlines(string(b))))
+	require.NoError(t, Run(ctx, Options{Target: target, WorkDir: dir}))
+	b := fsutils.MustRead(filepath.Join(dir, "main.go"))
+	g.Assert(t, "main.go", normalizeNewlines(b))
 }
 
 func TestE2E_Methods_Propagation(t *testing.T) {
-	ctx := t.Context()
-	t.Run("1", func(t *testing.T) {
-		g := genGoldie(t)
-		dir := writeTempModuleFromInput(t)
-		target := filepath.Join(dir, "main.go") + ":target"
-		if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
-			t.Fatalf("Run error: %v", err)
-		}
-		b, err := os.ReadFile(filepath.Join(dir, "main.go"))
-		if err != nil {
-			t.Fatalf("read main.go: %v", err)
-		}
-		g.Assert(t, filepath.Join("main.go"), []byte(normalizeNewlines(string(b))))
-	})
+	t.Parallel()
 
-	t.Run("2", func(t *testing.T) {
-		g := genGoldie(t)
-		dir := writeTempModuleFromInput(t)
-		target := filepath.Join(dir, "main.go") + ":target"
-		if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
-			t.Fatalf("Run error: %v", err)
-		}
-		b, err := os.ReadFile(filepath.Join(dir, "main.go"))
-		if err != nil {
-			t.Fatalf("read main.go: %v", err)
-		}
-		g.Assert(t, filepath.Join("main.go"), []byte(normalizeNewlines(string(b))))
-	})
+	ctx := t.Context()
+	for iTest := range 2 {
+		testLabel := strconv.Itoa(iTest + 1)
+		t.Run(testLabel, func(t *testing.T) {
+			t.Parallel()
+
+			g := genGoldie(t)
+			dir := writeTempModuleFromInput(t)
+			target := filepath.Join(dir, "main.go") + ":target"
+			require.NoError(t, Run(ctx, Options{Target: target, WorkDir: dir}))
+			b := fsutils.MustRead(filepath.Join(dir, "main.go"))
+			g.Assert(t, filepath.Join("main.go"), normalizeNewlines(b))
+		})
+	}
 }
 
 func TestE2E_ModuleWide_FromSubdir(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 	g := genGoldie(t)
 	dir := writeTempModuleFromInput(t)
@@ -275,82 +238,77 @@ func TestE2E_ModuleWide_FromSubdir(t *testing.T) {
 	// Run from the subdirectory where the target file resides, while callers exist outside of it.
 	subdir := filepath.Join(dir, "sub")
 	target := filepath.Join(subdir, "mylib.go") + ":FuncInNeedOfContext"
-	if err := Run(ctx, Options{Target: target, WorkDir: subdir}); err != nil {
-		t.Fatalf("Run error: %v", err)
-	}
+	require.NoError(t, Run(ctx, Options{Target: target, WorkDir: subdir}))
 
 	// Assert both the target file in subdir and the caller in parent (main.go) were updated.
-	bSub, err := os.ReadFile(filepath.Join(subdir, "mylib.go"))
-	if err != nil {
-		t.Fatalf("read sub/mylib.go: %v", err)
-	}
-	bMain, err := os.ReadFile(filepath.Join(dir, "main.go"))
-	if err != nil {
-		t.Fatalf("read main.go: %v", err)
-	}
-	g.Assert(t, "mylib.go", []byte(normalizeNewlines(string(bSub))))
-	g.Assert(t, "main.go", []byte(normalizeNewlines(string(bMain))))
+	bSub := fsutils.MustRead(filepath.Join(subdir, "mylib.go"))
+	bMain := fsutils.MustRead(filepath.Join(dir, "main.go"))
+	g.Assert(t, "mylib.go", normalizeNewlines(bSub))
+	g.Assert(t, "main.go", normalizeNewlines(bMain))
 }
 
 func TestE2E_Handle_TestFiles_TargetIsTestAndCallsitesInTests(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 	g := genGoldie(t)
 	dir := writeTempModuleFromInput(t)
 
 	target := filepath.Join(dir, "helper_test.go") + ":HelperTarget"
-	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
-		t.Fatalf("Run error: %v", err)
-	}
-	bHelper, err := os.ReadFile(filepath.Join(dir, "helper_test.go"))
-	if err != nil {
-		t.Fatalf("read helper_test.go: %v", err)
-	}
-	bCaller, err := os.ReadFile(filepath.Join(dir, "util_test.go"))
-	if err != nil {
-		t.Fatalf("read util_test.go: %v", err)
-	}
-	g.Assert(t, "helper_test.go", []byte(normalizeNewlines(string(bHelper))))
-	g.Assert(t, "util_test.go", []byte(normalizeNewlines(string(bCaller))))
+	require.NoError(t, Run(ctx, Options{Target: target, WorkDir: dir}))
+	bHelper := fsutils.MustRead(filepath.Join(dir, "helper_test.go"))
+	bCaller := fsutils.MustRead(filepath.Join(dir, "util_test.go"))
+	g.Assert(t, "helper_test.go", normalizeNewlines(bHelper))
+	g.Assert(t, "util_test.go", normalizeNewlines(bCaller))
 }
 
 func TestE2E_Handle_TestFiles_CallsitesInTestsForProdFunc(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 	g := genGoldie(t)
 	dir := writeTempModuleFromInput(t)
 
 	target := filepath.Join(dir, "util.go") + ":ProdFunc"
-	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
-		t.Fatalf("Run error: %v", err)
-	}
-	bUtil, err := os.ReadFile(filepath.Join(dir, "util.go"))
-	if err != nil {
-		t.Fatalf("read util.go: %v", err)
-	}
-	bTest, err := os.ReadFile(filepath.Join(dir, "util_test.go"))
-	if err != nil {
-		t.Fatalf("read util_test.go: %v", err)
-	}
-	g.Assert(t, "util.go", []byte(normalizeNewlines(string(bUtil))))
-	g.Assert(t, "util_test.go", []byte(normalizeNewlines(string(bTest))))
+	require.NoError(t, Run(ctx, Options{Target: target, WorkDir: dir}))
+	bUtil := fsutils.MustRead(filepath.Join(dir, "util.go"))
+	bTest := fsutils.MustRead(filepath.Join(dir, "util_test.go"))
+	g.Assert(t, "util.go", normalizeNewlines(bUtil))
+	g.Assert(t, "util_test.go", normalizeNewlines(bTest))
 }
 
 func TestE2E_Distinguish_Functions_Methods_And_Qualified(t *testing.T) {
-	ctx := t.Context()
-	g := genGoldie(t)
-	dir := writeTempModuleFromInput(t)
+	t.Parallel()
 
-	target := filepath.Join(dir, "main.go") + ":MyFunc"
-	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
-		t.Fatalf("Run error: %v", err)
+	ctx := t.Context()
+
+	targetMap := map[string]func(string) string{
+		"1": func(dir string) string { return filepath.Join(dir, "main.go") + ":MyFunc:11" },
+		"2": func(dir string) string { return filepath.Join(dir, "main.go") + ":MyFunc:19" },
+		"3": func(dir string) string { return filepath.Join(dir, "main.go") + ":MyFunc:25" },
+		"4": func(dir string) string { return filepath.Join(dir, "xyz", "xyz.go") + ":MyFunc" },
 	}
-	b, err := os.ReadFile(filepath.Join(dir, "main.go"))
-	if err != nil {
-		t.Fatalf("read main.go: %v", err)
+
+	for iTest := range 4 {
+		testLabel := strconv.Itoa(iTest + 1)
+		t.Run(testLabel, func(t *testing.T) {
+			t.Parallel()
+
+			g := genGoldie(t)
+			dir := writeTempModuleFromInput(t)
+			targetFunc, ok := targetMap[testLabel]
+			require.True(t, ok)
+			target := targetFunc(dir)
+			require.NoError(t, Run(ctx, Options{Target: target, WorkDir: dir}))
+			b := fsutils.MustRead(filepath.Join(dir, "main.go"))
+			g.Assert(t, "main.go", normalizeNewlines(b))
+		})
 	}
-	g.Assert(t, "main.go", []byte(normalizeNewlines(string(b))))
 }
 
 func TestE2E_OnlyOneCtxParam_WhenCallingTwoCallees(t *testing.T) {
+	t.Parallel()
+
 	ctx := t.Context()
 	g := genGoldie(t)
 	dir := writeTempModuleFromInput(t)
@@ -358,16 +316,9 @@ func TestE2E_OnlyOneCtxParam_WhenCallingTwoCallees(t *testing.T) {
 	// Run twice to simulate two separate operations: first adding ctx to MyOtherFunc1 callers,
 	// then to MyOtherFunc2 callers. MyFunc should only get one ctx parameter in total.
 	target1 := filepath.Join(dir, "main.go") + ":MyOtherFunc1"
-	if err := Run(ctx, Options{Target: target1, WorkDir: dir}); err != nil {
-		t.Fatalf("Run #1 error: %v", err)
-	}
+	require.NoError(t, Run(ctx, Options{Target: target1, WorkDir: dir}))
 	target2 := filepath.Join(dir, "main.go") + ":MyOtherFunc2"
-	if err := Run(ctx, Options{Target: target2, WorkDir: dir}); err != nil {
-		t.Fatalf("Run #2 error: %v", err)
-	}
-	b, err := os.ReadFile(filepath.Join(dir, "main.go"))
-	if err != nil {
-		t.Fatalf("read main.go: %v", err)
-	}
-	g.Assert(t, "main.go", []byte(normalizeNewlines(string(b))))
+	require.NoError(t, Run(ctx, Options{Target: target2, WorkDir: dir}))
+	b := fsutils.MustRead(filepath.Join(dir, "main.go"))
+	g.Assert(t, "main.go", normalizeNewlines(b))
 }

@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/tools/go/packages"
 
-	"github.com/preminger/goctx/pkg/util/fs"
+	"github.com/preminger/goctx/pkg/util/fsutils"
 )
 
 // targetResolution bundles the data about a resolved target function.
@@ -36,7 +36,7 @@ type targetResolution struct {
 // It now returns a targetResolution pointer and an error.
 func resolveTarget(pkgs []*packages.Package, spec targetSpec) (*targetResolution, error) {
 	slog.Debug("resolveTarget start", slog.String("file", spec.File), slog.String("func", spec.FuncName), slog.Int("line", spec.LineNumber))
-	absFile, err := fs.TruePath(spec.File)
+	absFile, err := fsutils.TruePath(spec.File)
 	if err != nil {
 		return nil, fmt.Errorf("ascertaining true path: %w", err)
 	}
@@ -46,7 +46,7 @@ func resolveTarget(pkgs []*packages.Package, spec targetSpec) (*targetResolution
 			if posFile == nil {
 				continue
 			}
-			fp, err := fs.TruePath(posFile.Name())
+			fp, err := fsutils.TruePath(posFile.Name())
 			if err != nil {
 				return nil, fmt.Errorf("ascertaining true path: %w", err)
 			}
@@ -125,12 +125,12 @@ func sameFile(p *packages.Package, fn *ast.FuncDecl, spec *targetSpec) (bool, er
 	if fi == nil {
 		return false, nil
 	}
-	abs1, err := fs.TruePath(fi.Name())
+	abs1, err := fsutils.TruePath(fi.Name())
 	if err != nil {
 		return false, fmt.Errorf("ascertaining true path: %w", err)
 	}
 
-	abs2, err := fs.TruePath(spec.File)
+	abs2, err := fsutils.TruePath(spec.File)
 	if err != nil {
 		return false, fmt.Errorf("ascertaining true path: %w", err)
 	}
