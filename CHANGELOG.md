@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.14.1] - 2025-12-01
 
-### Fixed
+### Changed
 
 - Inhibit pre-push `svu next --force-patch-increment` CHANGELOG.md hook in release flow.
 
