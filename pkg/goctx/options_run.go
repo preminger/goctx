@@ -11,6 +11,7 @@ import (
 	"go/types"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"golang.org/x/tools/go/packages"
@@ -113,9 +114,21 @@ func Run(_ context.Context, opts Options) error {
 	return nil
 }
 
-// loadAllPackages loads all packages in the workspace rooted at dir.
+// loadAllPackages loads all packages in the current Go module that contains dir.
+// Previously, we loaded only the subtree under dir ("./..."). This missed parent
+// directories that belong to the same module when dir is a subdirectory.
+// Now we discover the module root (by locating the nearest go.mod upwards from dir)
+// and set packages.Config.Dir to that root, ensuring the entire module is loaded.
 func loadAllPackages(dir string) ([]*packages.Package, error) {
 	slog.Debug("loading packages", slog.String("dir", dir))
+
+	moduleRoot := findModuleRoot(dir)
+	loadDir := dir
+	if moduleRoot != "" {
+		loadDir = moduleRoot
+	}
+	slog.Debug("resolved load dir", slog.String("loadDir", loadDir))
+
 	cfg := &packages.Config{
 		Mode: packages.NeedName |
 			packages.NeedFiles |
@@ -125,7 +138,8 @@ func loadAllPackages(dir string) ([]*packages.Package, error) {
 			packages.NeedTypes |
 			packages.NeedTypesInfo |
 			packages.NeedSyntax,
-		Dir: dir,
+		Dir:   loadDir,
+		Tests: true, // include _test.go files and test variants
 	}
 	pkgs, err := packages.Load(cfg, "./...")
 	if err != nil {
@@ -137,6 +151,33 @@ func loadAllPackages(dir string) ([]*packages.Package, error) {
 
 	slog.Debug("packages loaded", slog.Int("count", len(pkgs)))
 	return pkgs, nil
+}
+
+// findModuleRoot walks up from startDir to find the nearest directory containing a go.mod.
+// Returns the directory path if found; otherwise returns empty string.
+func findModuleRoot(startDir string) string {
+	// Normalize path
+	dir := startDir
+	if dir == "" {
+		if wd, err := os.Getwd(); err == nil {
+			dir = wd
+		}
+	}
+	// Convert to absolute for consistent traversal
+	if abs, err := filepath.Abs(dir); err == nil {
+		dir = abs
+	}
+	for {
+		gm := filepath.Join(dir, "go.mod")
+		if st, err := os.Stat(gm); err == nil && !st.IsDir() {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir { // reached filesystem root
+			return ""
+		}
+		dir = parent
+	}
 }
 
 // maybeRenameBlankCtxInTarget renames a blank-named context parameter to ctx for the target function
@@ -233,6 +274,160 @@ type processCallSitesParams struct {
 	sawAnyCall    *bool
 }
 
+// resolveCalled attempts to resolve the types.Object being invoked by a call expression's Fun.
+// It unwraps generic instantiations (IndexExpr/IndexListExpr), uses Selections for methods,
+// and falls back to Uses for identifiers/selectors.
+func resolveCalled(info *types.Info, fun ast.Expr) (types.Object, string) {
+	// Unwrap generic instantiation layers to reach the underlying ident/selector.
+	for {
+		switch x := fun.(type) {
+		case *ast.IndexExpr:
+			fun = x.X
+			continue
+		case *ast.IndexListExpr:
+			fun = x.X
+			continue
+		}
+		break
+	}
+
+	switch theExpr := fun.(type) {
+	case *ast.Ident:
+		return info.Uses[theExpr], theExpr.Name
+	case *ast.SelectorExpr:
+		// Prefer Selections (covers method values/calls and promoted methods)
+		if sel := info.Selections[theExpr]; sel != nil {
+			return sel.Obj(), theExpr.Sel.Name
+		}
+		// Fallback to Uses for package-qualified functions or fields
+		return info.Uses[theExpr.Sel], theExpr.Sel.Name
+	default:
+		return nil, ""
+	}
+}
+
+// getNamedReceiver returns the named type for a receiver, dereferencing pointers.
+func getNamedReceiver(t types.Type) *types.Named {
+	for {
+		switch tt := t.(type) {
+		case *types.Pointer:
+			t = tt.Elem()
+			continue
+		case *types.Named:
+			return tt
+		default:
+			return nil
+		}
+	}
+}
+
+// matchCallTarget returns true if the given call expression refers to the target object curr.
+// It encapsulates several matching strategies while keeping control flow simple:
+//  1. Direct pointer identity
+//  2. Cross-package/test variant identity (signature-agnostic) using safe attributes
+//  3. Safer fallback for unresolved objects: identifier call to a free function in the same package
+func matchCallTarget(pkg *packages.Package, call *ast.CallExpr, curr types.Object) bool {
+	if call == nil || pkg == nil || curr == nil {
+		return false
+	}
+
+	calledObj, funcName := resolveCalled(pkg.TypesInfo, call.Fun)
+
+	// 1) Fast path: pointer identity
+	if calledObj == curr {
+		return true
+	}
+
+	// 2) Cross-package/test variant identity (signature-agnostic)
+	if calledObj != nil {
+		if isMethodTargetMatch(calledObj, curr) || isFreeFuncTargetMatch(calledObj, curr) {
+			return true
+		}
+	}
+
+	// 3) Fallback: unresolved object but identifier call to same-pkg free function
+	if isUnresolvedSamePkgIdentFallback(pkg, call, funcName, curr) {
+		return true
+	}
+
+	return false
+}
+
+// isMethodTargetMatch reports whether calledObj matches curr when both are methods.
+// It matches by method name and receiver named type (package path + type name),
+// dereferencing pointer receivers. Safe because Go has no overloading.
+func isMethodTargetMatch(calledObj, curr types.Object) bool {
+	if calledObj == nil || curr == nil {
+		return false
+	}
+	currSig, ok := curr.Type().(*types.Signature)
+	if !ok || currSig.Recv() == nil {
+		return false
+	}
+	calledSig, ok := calledObj.Type().(*types.Signature)
+	if !ok || calledSig.Recv() == nil {
+		return false
+	}
+
+	currRecv := getNamedReceiver(currSig.Recv().Type())
+	calledRecv := getNamedReceiver(calledSig.Recv().Type())
+	if currRecv == nil || calledRecv == nil {
+		return false
+	}
+	cObj := currRecv.Obj()
+	oObj := calledRecv.Obj()
+	if cObj == nil || oObj == nil || cObj.Pkg() == nil || oObj.Pkg() == nil {
+		return false
+	}
+	sameRecv := cObj.Pkg().Path() == oObj.Pkg().Path() && cObj.Name() == oObj.Name()
+	sameMethod := calledObj.Name() == curr.Name()
+	return sameRecv && sameMethod
+}
+
+// isFreeFuncTargetMatch reports whether calledObj matches curr for free functions
+// by comparing name and package path.
+func isFreeFuncTargetMatch(calledObj, curr types.Object) bool {
+	if calledObj == nil || curr == nil {
+		return false
+	}
+	currSig, ok := curr.Type().(*types.Signature)
+	if !ok || currSig.Recv() != nil {
+		return false // curr is not a free function
+	}
+	calledSig, ok := calledObj.Type().(*types.Signature)
+	if !ok || calledSig.Recv() != nil {
+		return false // called is not a free function
+	}
+	if calledObj.Pkg() == nil || curr.Pkg() == nil {
+		return false
+	}
+	return calledObj.Name() == curr.Name() && calledObj.Pkg().Path() == curr.Pkg().Path()
+}
+
+// isUnresolvedSamePkgIdentFallback covers the safe fallback when resolution failed but
+// we see an identifier call in the same package to a free function that matches by name.
+func isUnresolvedSamePkgIdentFallback(pkg *packages.Package, call *ast.CallExpr, funcName string, curr types.Object) bool {
+	if pkg == nil || call == nil || curr == nil {
+		return false
+	}
+	if funcName == "" || curr.Pkg() == nil || funcName != curr.Name() {
+		return false
+	}
+	sig, ok := curr.Type().(*types.Signature)
+	if !ok || sig.Recv() != nil {
+		return false // only for free functions
+	}
+	if _, isIdent := call.Fun.(*ast.Ident); !isIdent {
+		return false
+	}
+	return pkg.PkgPath == curr.Pkg().Path()
+}
+
+// markCurrentFileModified marks the current file (from params) as modified.
+func markCurrentFileModified(params processCallSitesParams) {
+	markFileModified(params.modifiedFiles, params.pkg.Fset, params.pkg.Syntax[params.fileIndex])
+}
+
 func processCallSites(params processCallSitesParams) error {
 	var inspectErr error
 	ast.Inspect(params.fileAST, func(n ast.Node) bool {
@@ -243,24 +438,7 @@ func processCallSites(params processCallSitesParams) error {
 		if !ok {
 			return true
 		}
-		var calledObj types.Object
-		var funName string
-		switch fun := call.Fun.(type) {
-		case *ast.Ident:
-			calledObj = params.pkg.TypesInfo.Uses[fun]
-			funName = fun.Name
-		case *ast.SelectorExpr:
-			calledObj = params.pkg.TypesInfo.Uses[fun.Sel]
-			funName = fun.Sel.Name
-		}
-		match := calledObj == params.curr
-		if !match {
-			// Fallback by name and package path to be resilient to partial type info
-			if funName != "" && params.curr != nil && params.curr.Pkg() != nil && params.pkg.PkgPath == params.curr.Pkg().Path() && funName == params.curr.Name() {
-				match = true
-			}
-		}
-		if !match {
+		if !matchCallTarget(params.pkg, call, params.curr) {
 			return true
 		}
 		// Found a call. Mark that at least one call site exists.
@@ -287,7 +465,7 @@ func processCallSites(params processCallSitesParams) error {
 			}
 			ctxName := getCtxIdentInScope(enc, params.pkg)
 			ensureCallHasCtxArg(params.pkg, call, ctxName)
-			markFileModified(params.modifiedFiles, params.pkg.Fset, params.pkg.Syntax[params.fileIndex])
+			markCurrentFileModified(params)
 			return true
 		}
 
@@ -295,7 +473,7 @@ func processCallSites(params processCallSitesParams) error {
 		if hasCtxInScope(enc, params.pkg) {
 			ctxName := getCtxIdentInScope(enc, params.pkg)
 			ensureCallHasCtxArg(params.pkg, call, ctxName)
-			markFileModified(params.modifiedFiles, params.pkg.Fset, params.pkg.Syntax[params.fileIndex])
+			markCurrentFileModified(params)
 			return true
 		}
 
@@ -306,7 +484,7 @@ func processCallSites(params processCallSitesParams) error {
 		ctxName := getCtxIdentInScope(enc, params.pkg)
 		ensureCallHasCtxArg(params.pkg, call, ctxName)
 		// Mark file modified (either signature or call site changed)
-		markFileModified(params.modifiedFiles, params.pkg.Fset, params.pkg.Syntax[params.fileIndex])
+		markCurrentFileModified(params)
 
 		// Only enqueue if we had to ADD a brand new context parameter. If we are reusing an existing one,
 		// do not traverse further; callers of this function already pass their context argument.

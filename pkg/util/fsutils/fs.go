@@ -1,7 +1,8 @@
-package fs
+package fsutils
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 )
 
@@ -35,4 +36,14 @@ func TruePath(path string) (string, error) {
 	}
 
 	return path, nil
+}
+
+// MustRead reads a file from the given path or panics if an error occurs.
+func MustRead(path string) []byte {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		panic(err)
+	}
+
+	return data
 }

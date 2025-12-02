@@ -7,9 +7,9 @@ import (
 
 // Handler is an http handler; boundary should derive ctx := req.Context()
 func Handler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	_ = w
 	_ = r // keep
-	ctx := r.Context()
 	inner(ctx)
 }
 

@@ -1,5 +1,7 @@
 package main
 
+import "context"
+
 type S struct{}
 
 func (s *S) target() {}

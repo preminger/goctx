@@ -17,6 +17,7 @@ const (
 	StopReasonNone StopReason = iota
 	StopReasonMain
 	StopReasonHTTP
+	StopReasonTest
 	StopReasonStopAt
 )
 
@@ -43,6 +44,12 @@ func shouldStopAt(funcDecl *ast.FuncDecl, pkg *packages.Package, opts Options, s
 				return true, StopReasonStopAt, nil
 			}
 		}
+	}
+
+	// testing boundary: any function with testing.T, testing.B, testing.F, or testing.TB (or pointer)
+	if isTestingBoundary(funcDecl, pkg) {
+		slog.Debug("stop at testing boundary", slog.String("func", funcDecl.Name.Name))
+		return true, StopReasonTest, nil
 	}
 
 	// html handler boundary
@@ -125,17 +132,33 @@ func ensureCtxAvailableAtBoundary(pkg *packages.Package, file *ast.File, fn *ast
 			return false, errors.New("determining http request parameter name")
 		}
 		stmt := makeAssignCtxFromRequest(reqName)
-		insertAfterLeadingBlankAssignsF(pkg.Fset, file, fn, stmt)
+		insertAtFuncStartF(fn, stmt)
 		slog.Debug("inserted ctx := req.Context()", slog.String("func", fn.Name.Name), slog.String("req", reqName))
+		return true, nil
+	case StopReasonTest:
+		testName := findTestingParamName(fn, pkg)
+		if testName == "" {
+			// Fall back to background if we cannot determine a testing param name (should be rare)
+			ensureImport(pkg.Fset, file, "context")
+			stmt := makeAssignCtxBackground()
+			insertAtFuncStartF(fn, stmt)
+			slog.Debug("inserted ctx := context.Background() (fallback for testing boundary)", slog.String("func", fn.Name.Name))
+			return true, nil
+		}
+		stmt := makeAssignCtxFromTesting(testName)
+		// For testing boundaries, ensure ctx is initialized BEFORE any statements (including
+		// leading blank assigns like `_ = HelperTarget(...)`) so that those calls can use ctx.
+		insertAtFuncStartF(fn, stmt)
+		slog.Debug("inserted ctx := t.Context()", slog.String("func", fn.Name.Name), slog.String("t", testName))
 		return true, nil
 	default:
 		return false, nil
 	}
 }
 
-// insertAfterLeadingBlankAssignsF works like insertAfterLeadingBlankAssigns but also
-// adjusts the new statement's positions so that any trailing comments on the
-// previous line stay attached to that previous statement.
+// insertAfterLeadingBlankAssignsF inserts a statement after leading blank assigns.
+// Adjusts formatting and positions to maintain proper syntax and style.
+// Handles positioning relative to comments or existing statements in the function.
 func insertAfterLeadingBlankAssignsF(fset *token.FileSet, file *ast.File, fn *ast.FuncDecl, stmt ast.Stmt) {
 	if fn == nil || fn.Body == nil {
 		return
@@ -152,19 +175,19 @@ func insertAfterLeadingBlankAssignsF(fset *token.FileSet, file *ast.File, fn *as
 		}
 		idx++
 	}
+	// Compute a base position for nicer formatting.
+	var base token.Pos
 	if idx > 0 {
-		base := fn.Body.List[idx-1].End() + 1
+		base = fn.Body.List[idx-1].End() + 1
 		lastLine := fset.Position(fn.Body.List[idx-1].End()).Line
-		// If there's a comment group on the same line, use its end as base.
+		// If there's a comment group on the same line, use its end as base and nudge
+		// its tokens so it remains trailing on the previous statement.
 		for _, cg := range file.Comments {
 			if fset.Position(cg.Pos()).Line == lastLine {
 				cend := cg.End()
 				if cend > base {
 					base = cend + 1
 				}
-				// Nudge the comment group's position slightly earlier so it remains a trailing
-				// comment of the previous statement rather than being treated as a leading
-				// comment for the newly inserted statement.
 				for _, c := range cg.List {
 					if fset.Position(c.Slash).Line == lastLine && c.Slash > fn.Body.List[idx-1].End() {
 						c.Slash = fn.Body.List[idx-1].End() - 1
@@ -172,11 +195,32 @@ func insertAfterLeadingBlankAssignsF(fset *token.FileSet, file *ast.File, fn *as
 				}
 			}
 		}
-		if assign, ok := stmt.(*ast.AssignStmt); ok {
-			setAssignApproxPos(assign, base)
+	} else if len(fn.Body.List) > 0 {
+		// idx == 0: place after any leading comment groups present before the first statement.
+		firstStmtPos := fn.Body.List[0].Pos()
+		base = fn.Body.Lbrace + 1
+		for _, cg := range file.Comments {
+			if cg.Pos() > fn.Body.Lbrace && cg.End() < firstStmtPos {
+				if cg.End()+1 > base {
+					base = cg.End() + 1
+				}
+			}
 		}
 	}
+	if assign, ok := stmt.(*ast.AssignStmt); ok && base != token.NoPos {
+		setAssignApproxPos(assign, base)
+	}
 	fn.Body.List = append(fn.Body.List[:idx], append([]ast.Stmt{stmt}, fn.Body.List[idx:]...)...)
+}
+
+// insertAtFuncStartF inserts stmt as the first statement of fn.Body, adjusting
+// token positions so formatting is stable and existing comments remain attached
+// to their intended lines.
+func insertAtFuncStartF(fn *ast.FuncDecl, stmt ast.Stmt) {
+	if fn == nil || fn.Body == nil {
+		return
+	}
+	fn.Body.List = append([]ast.Stmt{stmt}, fn.Body.List...)
 }
 
 // setAssignApproxPos sets approximate token positions on an assignment statement to
@@ -230,6 +274,15 @@ func makeAssignCtxFromRequest(req string) ast.Stmt {
 	}
 }
 
+func makeAssignCtxFromTesting(tvar string) ast.Stmt {
+	// ctx := <tvar>.Context()
+	return &ast.AssignStmt{
+		Lhs: []ast.Expr{ast.NewIdent(VarNameCtx)},
+		Tok: token.DEFINE,
+		Rhs: []ast.Expr{&ast.CallExpr{Fun: &ast.SelectorExpr{X: ast.NewIdent(tvar), Sel: ast.NewIdent("Context")}}},
+	}
+}
+
 func findHTTPRequestParamName(fn *ast.FuncDecl, p *packages.Package) string {
 	if fn.Type.Params == nil {
 		return ""
@@ -255,10 +308,29 @@ func findHTTPRequestParamName(fn *ast.FuncDecl, p *packages.Package) string {
 	return ""
 }
 
-func ensureCallHasCtxArg(_ *packages.Package, call *ast.CallExpr, ctxName string) {
+func ensureCallHasCtxArg(pkg *packages.Package, call *ast.CallExpr, ctxName string) {
 	if ctxName == "" {
 		ctxName = VarNameCtx
 	}
+	// If there's already a first argument and it's either the same identifier name
+	// or it is of type context.Context, avoid adding a duplicate.
+	if len(call.Args) > 0 {
+		// Case 1: first arg is an ident with the same name (ctx)
+		if id, ok := call.Args[0].(*ast.Ident); ok {
+			if id.Name == ctxName {
+				return
+			}
+		}
+		// Case 2: first arg type is context.Context
+		if pkg != nil && pkg.TypesInfo != nil {
+			if t := pkg.TypesInfo.TypeOf(call.Args[0]); t != nil {
+				if types.TypeString(t, func(p *types.Package) string { return p.Path() }) == ContextContext {
+					return
+				}
+			}
+		}
+	}
+
 	// Prepend ctx ident to arguments
 	call.Args = append([]ast.Expr{ast.NewIdent(ctxName)}, call.Args...)
 }
@@ -334,4 +406,60 @@ func getCtxIdentInScope(fn *ast.FuncDecl, pkg *packages.Package) string {
 
 func hasCtxInScope(fn *ast.FuncDecl, pkg *packages.Package) bool {
 	return getCtxIdentInScope(fn, pkg) != ""
+}
+
+// isTestingBoundary reports whether the function has a parameter of type testing.T, testing.B,
+// testing.F, or testing.TB (or a pointer to any of these), indicating a Go test entry point.
+func isTestingBoundary(fn *ast.FuncDecl, pkg *packages.Package) bool {
+	if fn == nil || fn.Type == nil || fn.Type.Params == nil {
+		return false
+	}
+	for _, field := range fn.Type.Params.List {
+		if isTestingParamType(pkg, field.Type) {
+			return true
+		}
+	}
+	return false
+}
+
+func isTestingParamType(pkg *packages.Package, expr ast.Expr) bool {
+	if expr == nil {
+		return false
+	}
+	theType := pkg.TypesInfo.TypeOf(expr)
+	// Unwrap pointers
+	if pt, ok := theType.(*types.Pointer); ok {
+		theType = pt.Elem()
+	}
+	// Named types from testing package: T, B, F, TB
+	if named, ok := theType.(*types.Named); ok {
+		if named.Obj() == nil || named.Obj().Pkg() == nil {
+			return false
+		}
+		if named.Obj().Pkg().Path() != "testing" {
+			return false
+		}
+		switch named.Obj().Name() {
+		case "T", "B", "F", "TB":
+			return true
+		}
+	}
+	return false
+}
+
+// findTestingParamName returns the identifier name of the testing parameter (t, b, f, tb, etc.).
+// If unnamed, it returns a sensible default "t".
+func findTestingParamName(fn *ast.FuncDecl, pkg *packages.Package) string {
+	if fn == nil || fn.Type == nil || fn.Type.Params == nil {
+		return ""
+	}
+	for _, field := range fn.Type.Params.List {
+		if isTestingParamType(pkg, field.Type) {
+			if len(field.Names) > 0 && field.Names[0] != nil && field.Names[0].Name != "" && field.Names[0].Name != "_" {
+				return field.Names[0].Name
+			}
+			return "t"
+		}
+	}
+	return ""
 }
