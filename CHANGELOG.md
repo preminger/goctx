@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.1] - 2025-12-01
+
+### Added
+
+- Treat `func TestMain(m *testing.M)` as boundary, along the same lines as `func main()`.
+
 ## [0.12.0] - 2025-12-01
 
 ### Added
@@ -292,7 +298,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.12.0...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.12.1...HEAD
+[0.12.1]: https://github.com/preminger/goctx/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/preminger/goctx/compare/v0.11.4...v0.12.0
 [0.11.4]: https://github.com/preminger/goctx/compare/v0.11.3...v0.11.4
 [0.11.3]: https://github.com/preminger/goctx/compare/v0.11.2...v0.11.3
