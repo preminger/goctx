@@ -11,11 +11,19 @@ import (
 	"github.com/sebdah/goldie/v2"
 )
 
+func genGoldie(t *testing.T) *goldie.Goldie {
+	return goldie.New(
+		t,
+		goldie.WithFixtureDir(fixturesDir(t)),
+		goldie.WithNameSuffix(""),
+	)
+}
+
 func fixturesDir(t *testing.T) string {
 	t.Helper()
 	_, file, _, _ := runtime.Caller(0)
 
-	return filepath.Join(filepath.Dir(file), "testdata", "golden")
+	return filepath.Join(filepath.Dir(file), "testdata", "golden", t.Name())
 }
 
 func normalizeNewlines(s string) string {
@@ -26,139 +34,6 @@ func normalizeNewlines(s string) string {
 	return s
 }
 
-func TestE2E_Simple_AddCtx_PreservesComments(t *testing.T) {
-	ctx := t.Context()
-	g := goldie.New(t, goldie.WithFixtureDir(fixturesDir(t)))
-	dir := writeTempModuleFromInput(t, "e2e_simple_addctx_preserve_comments")
-
-	target := filepath.Join(dir, "main.go") + ":FuncInNeedOfContext"
-	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
-		t.Fatalf("Run error: %v", err)
-	}
-	// Read back file and compare golden
-	b, err := os.ReadFile(filepath.Join(dir, "main.go"))
-	if err != nil {
-		t.Fatalf("read result: %v", err)
-	}
-	g.Assert(t, "e2e_simple_addctx_preserve_comments", []byte(normalizeNewlines(string(b))))
-}
-
-func TestE2E_Propagate_StopAtMain_PreservesComments(t *testing.T) {
-	ctx := t.Context()
-	g := goldie.New(t, goldie.WithFixtureDir(fixturesDir(t)))
-	dir := writeTempModuleFromInput(t, "e2e_propagate")
-	target := filepath.Join(dir, "a", "b.go") + ":Callee"
-	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
-		t.Fatalf("Run error: %v", err)
-	}
-	bA, err := os.ReadFile(filepath.Join(dir, "a", "a.go"))
-	if err != nil {
-		t.Fatalf("read a.go: %v", err)
-	}
-	bB, err := os.ReadFile(filepath.Join(dir, "a", "b.go"))
-	if err != nil {
-		t.Fatalf("read b.go: %v", err)
-	}
-	bMain, err := os.ReadFile(filepath.Join(dir, "main.go"))
-	if err != nil {
-		t.Fatalf("read main.go: %v", err)
-	}
-	g.Assert(t, "e2e_propagate_a_go", []byte(normalizeNewlines(string(bA))))
-	g.Assert(t, "e2e_propagate_b_go", []byte(normalizeNewlines(string(bB))))
-	g.Assert(t, "e2e_propagate_main_go", []byte(normalizeNewlines(string(bMain))))
-}
-
-func TestE2E_HTTPBoundary_PreservesComments(t *testing.T) {
-	ctx := t.Context()
-	g := goldie.New(t, goldie.WithFixtureDir(fixturesDir(t)))
-	dir := writeTempModuleFromInput(t, "e2e_http_boundary")
-	target := filepath.Join(dir, "srv", "srv.go") + ":inner"
-	if err := Run(ctx, Options{Target: target, WorkDir: dir, HTML: true}); err != nil {
-		t.Fatalf("Run error: %v", err)
-	}
-	b, err := os.ReadFile(filepath.Join(dir, "srv", "srv.go"))
-	if err != nil {
-		t.Fatalf("read srv.go: %v", err)
-	}
-	g.Assert(t, "e2e_http_boundary_srv_go", []byte(normalizeNewlines(string(b))))
-}
-
-func TestE2E_RenameBlankCtxParamToCtx(t *testing.T) {
-	ctx := t.Context()
-	g := goldie.New(t, goldie.WithFixtureDir(fixturesDir(t)))
-	dir := writeTempModuleFromInput(t, "e2e_ctxparam_blank_to_ctx")
-	target := filepath.Join(dir, "main.go") + ":target"
-	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
-		t.Fatalf("Run error: %v", err)
-	}
-	b, err := os.ReadFile(filepath.Join(dir, "main.go"))
-	if err != nil {
-		t.Fatalf("read main.go: %v", err)
-	}
-	g.Assert(t, "e2e_ctxparam_blank_to_ctx_main_go", []byte(normalizeNewlines(string(b))))
-}
-
-func TestE2E_UseExistingNamedContextParam(t *testing.T) {
-	ctx := t.Context()
-	g := goldie.New(t, goldie.WithFixtureDir(fixturesDir(t)))
-	dir := writeTempModuleFromInput(t, "e2e_ctxparam_named_use_existing")
-	target := filepath.Join(dir, "main.go") + ":target"
-	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
-		t.Fatalf("Run error: %v", err)
-	}
-	b, err := os.ReadFile(filepath.Join(dir, "main.go"))
-	if err != nil {
-		t.Fatalf("read main.go: %v", err)
-	}
-	g.Assert(t, "e2e_ctxparam_named_use_existing_main_go", []byte(normalizeNewlines(string(b))))
-}
-
-func TestE2E_UseExistingBlankContextParam(t *testing.T) {
-	ctx := t.Context()
-	g := goldie.New(t, goldie.WithFixtureDir(fixturesDir(t)))
-	dir := writeTempModuleFromInput(t, "e2e_ctxparam_blank_use_existing")
-	target := filepath.Join(dir, "main.go") + ":target"
-	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
-		t.Fatalf("Run error: %v", err)
-	}
-	b, err := os.ReadFile(filepath.Join(dir, "main.go"))
-	if err != nil {
-		t.Fatalf("read main.go: %v", err)
-	}
-	g.Assert(t, "e2e_ctxparam_blank_use_existing_main_go", []byte(normalizeNewlines(string(b))))
-}
-
-func TestE2E_ReuseExisting_Blank_Midlevel(t *testing.T) {
-	ctx := t.Context()
-	g := goldie.New(t, goldie.WithFixtureDir(fixturesDir(t)))
-	dir := writeTempModuleFromInput(t, "e2e_reuse_midlevel_blank")
-	target := filepath.Join(dir, "main.go") + ":target"
-	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
-		t.Fatalf("Run error: %v", err)
-	}
-	b, err := os.ReadFile(filepath.Join(dir, "main.go"))
-	if err != nil {
-		t.Fatalf("read main.go: %v", err)
-	}
-	g.Assert(t, "e2e_reuse_midlevel_blank_main_go", []byte(normalizeNewlines(string(b))))
-}
-
-func TestE2E_LineNumberDisambiguation(t *testing.T) {
-	ctx := t.Context()
-	g := goldie.New(t, goldie.WithFixtureDir(fixturesDir(t)))
-	dir := writeTempModuleFromInput(t, "e2e_line_number_disambiguation")
-	// The (A) target starts at line 6 in the fixture
-	target := filepath.Join(dir, "main.go") + ":target:6"
-	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
-		t.Fatalf("Run error: %v", err)
-	}
-	b, err := os.ReadFile(filepath.Join(dir, "main.go"))
-	if err != nil {
-		t.Fatalf("read main.go: %v", err)
-	}
-	g.Assert(t, "e2e_line_number_disambiguation_main_go", []byte(normalizeNewlines(string(b))))
-}
-
 // inputDir returns the path to testdata/input alongside this test file.
 func inputDir(t *testing.T) string {
 	t.Helper()
@@ -167,11 +42,11 @@ func inputDir(t *testing.T) string {
 	return filepath.Join(filepath.Dir(file), "testdata", "input")
 }
 
-// writeTempModuleFromInput copies a fixture case from testdata/input/<caseName>
-// into a new temporary directory and writes a minimal go.mod. It returns the temp dir.
-func writeTempModuleFromInput(t *testing.T, caseName string) string {
+// writeTempModuleFromInput creates a temporary module for a test case.
+// It copies input data to a temporary directory and writes a go.mod file.
+func writeTempModuleFromInput(t *testing.T) string {
 	t.Helper()
-	src := filepath.Join(inputDir(t), caseName)
+	src := filepath.Join(inputDir(t), t.Name())
 	dst := t.TempDir()
 	// Copy all files from src to dst, preserving relative paths
 	if err := copyDir(t, src, dst); err != nil {
@@ -213,10 +88,143 @@ func copyDir(t *testing.T, src, dst string) error {
 	})
 }
 
+func TestE2E_Simple_AddCtx_PreservesComments(t *testing.T) {
+	ctx := t.Context()
+	g := genGoldie(t)
+	dir := writeTempModuleFromInput(t)
+
+	target := filepath.Join(dir, "main.go") + ":FuncInNeedOfContext"
+	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+	// Read back file and compare golden
+	b, err := os.ReadFile(filepath.Join(dir, "main.go"))
+	if err != nil {
+		t.Fatalf("read result: %v", err)
+	}
+	g.Assert(t, "main.go", []byte(normalizeNewlines(string(b))))
+}
+
+func TestE2E_Propagate_StopAtMain_PreservesComments(t *testing.T) {
+	ctx := t.Context()
+	g := genGoldie(t)
+	dir := writeTempModuleFromInput(t)
+	target := filepath.Join(dir, "a", "b.go") + ":Callee"
+	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+	bA, err := os.ReadFile(filepath.Join(dir, "a", "a.go"))
+	if err != nil {
+		t.Fatalf("read a.go: %v", err)
+	}
+	bB, err := os.ReadFile(filepath.Join(dir, "a", "b.go"))
+	if err != nil {
+		t.Fatalf("read b.go: %v", err)
+	}
+	bMain, err := os.ReadFile(filepath.Join(dir, "main.go"))
+	if err != nil {
+		t.Fatalf("read main.go: %v", err)
+	}
+	g.Assert(t, "a.go", []byte(normalizeNewlines(string(bA))))
+	g.Assert(t, "b.go", []byte(normalizeNewlines(string(bB))))
+	g.Assert(t, "main.go", []byte(normalizeNewlines(string(bMain))))
+}
+
+func TestE2E_HTTPBoundary_PreservesComments(t *testing.T) {
+	ctx := t.Context()
+	g := genGoldie(t)
+	dir := writeTempModuleFromInput(t)
+	target := filepath.Join(dir, "srv", "srv.go") + ":inner"
+	if err := Run(ctx, Options{Target: target, WorkDir: dir, HTML: true}); err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+	b, err := os.ReadFile(filepath.Join(dir, "srv", "srv.go"))
+	if err != nil {
+		t.Fatalf("read srv.go: %v", err)
+	}
+	g.Assert(t, "srv.go", []byte(normalizeNewlines(string(b))))
+}
+
+func TestE2E_RenameBlankCtxParamToCtx(t *testing.T) {
+	ctx := t.Context()
+	g := genGoldie(t)
+	dir := writeTempModuleFromInput(t)
+	target := filepath.Join(dir, "main.go") + ":target"
+	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+	b, err := os.ReadFile(filepath.Join(dir, "main.go"))
+	if err != nil {
+		t.Fatalf("read main.go: %v", err)
+	}
+	g.Assert(t, "main.go", []byte(normalizeNewlines(string(b))))
+}
+
+func TestE2E_UseExistingNamedContextParam(t *testing.T) {
+	ctx := t.Context()
+	g := genGoldie(t)
+	dir := writeTempModuleFromInput(t)
+	target := filepath.Join(dir, "main.go") + ":target"
+	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+	b, err := os.ReadFile(filepath.Join(dir, "main.go"))
+	if err != nil {
+		t.Fatalf("read main.go: %v", err)
+	}
+	g.Assert(t, "main.go", []byte(normalizeNewlines(string(b))))
+}
+
+func TestE2E_UseExistingBlankContextParam(t *testing.T) {
+	ctx := t.Context()
+	g := genGoldie(t)
+	dir := writeTempModuleFromInput(t)
+	target := filepath.Join(dir, "main.go") + ":target"
+	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+	b, err := os.ReadFile(filepath.Join(dir, "main.go"))
+	if err != nil {
+		t.Fatalf("read main.go: %v", err)
+	}
+	g.Assert(t, "main.go", []byte(normalizeNewlines(string(b))))
+}
+
+func TestE2E_ReuseExisting_Blank_Midlevel(t *testing.T) {
+	ctx := t.Context()
+	g := genGoldie(t)
+	dir := writeTempModuleFromInput(t)
+	target := filepath.Join(dir, "main.go") + ":target"
+	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+	b, err := os.ReadFile(filepath.Join(dir, "main.go"))
+	if err != nil {
+		t.Fatalf("read main.go: %v", err)
+	}
+	g.Assert(t, "main.go", []byte(normalizeNewlines(string(b))))
+}
+
+func TestE2E_LineNumberDisambiguation(t *testing.T) {
+	ctx := t.Context()
+	g := genGoldie(t)
+	dir := writeTempModuleFromInput(t)
+	// The (A) target starts at line 6 in the fixture
+	target := filepath.Join(dir, "main.go") + ":target:6"
+	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
+		t.Fatalf("Run error: %v", err)
+	}
+	b, err := os.ReadFile(filepath.Join(dir, "main.go"))
+	if err != nil {
+		t.Fatalf("read main.go: %v", err)
+	}
+	g.Assert(t, "main.go", []byte(normalizeNewlines(string(b))))
+}
+
 func TestE2E_BigExample(t *testing.T) {
 	ctx := t.Context()
-	g := goldie.New(t, goldie.WithFixtureDir(fixturesDir(t)))
-	dir := writeTempModuleFromInput(t, "e2e_big_example")
+	g := genGoldie(t)
+	dir := writeTempModuleFromInput(t)
 	target := filepath.Join(dir, "main.go") + ":targetFunc"
 	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
 		t.Fatalf("Run error: %v", err)
@@ -225,15 +233,14 @@ func TestE2E_BigExample(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read main.go: %v", err)
 	}
-	g.Assert(t, "e2e_big_example_main_go", []byte(normalizeNewlines(string(b))))
+	g.Assert(t, "main.go", []byte(normalizeNewlines(string(b))))
 }
 
 func TestE2E_Methods_Propagation(t *testing.T) {
 	ctx := t.Context()
-	g := goldie.New(t, goldie.WithFixtureDir(fixturesDir(t)))
-
 	t.Run("1", func(t *testing.T) {
-		dir := writeTempModuleFromInput(t, "e2e_methods1")
+		g := genGoldie(t)
+		dir := writeTempModuleFromInput(t)
 		target := filepath.Join(dir, "main.go") + ":target"
 		if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
 			t.Fatalf("Run error: %v", err)
@@ -242,11 +249,12 @@ func TestE2E_Methods_Propagation(t *testing.T) {
 		if err != nil {
 			t.Fatalf("read main.go: %v", err)
 		}
-		g.Assert(t, "e2e_methods1_main_go", []byte(normalizeNewlines(string(b))))
+		g.Assert(t, filepath.Join("main.go"), []byte(normalizeNewlines(string(b))))
 	})
 
 	t.Run("2", func(t *testing.T) {
-		dir := writeTempModuleFromInput(t, "e2e_methods2")
+		g := genGoldie(t)
+		dir := writeTempModuleFromInput(t)
 		target := filepath.Join(dir, "main.go") + ":target"
 		if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
 			t.Fatalf("Run error: %v", err)
@@ -255,14 +263,14 @@ func TestE2E_Methods_Propagation(t *testing.T) {
 		if err != nil {
 			t.Fatalf("read main.go: %v", err)
 		}
-		g.Assert(t, "e2e_methods2_main_go", []byte(normalizeNewlines(string(b))))
+		g.Assert(t, filepath.Join("main.go"), []byte(normalizeNewlines(string(b))))
 	})
 }
 
 func TestE2E_ModuleWide_FromSubdir(t *testing.T) {
 	ctx := t.Context()
-	g := goldie.New(t, goldie.WithFixtureDir(fixturesDir(t)))
-	dir := writeTempModuleFromInput(t, "e2e_modulewide_subdir")
+	g := genGoldie(t)
+	dir := writeTempModuleFromInput(t)
 
 	// Run from the subdirectory where the target file resides, while callers exist outside of it.
 	subdir := filepath.Join(dir, "sub")
@@ -280,14 +288,14 @@ func TestE2E_ModuleWide_FromSubdir(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read main.go: %v", err)
 	}
-	g.Assert(t, "e2e_modulewide_subdir_mylib_go", []byte(normalizeNewlines(string(bSub))))
-	g.Assert(t, "e2e_modulewide_subdir_main_go", []byte(normalizeNewlines(string(bMain))))
+	g.Assert(t, "mylib.go", []byte(normalizeNewlines(string(bSub))))
+	g.Assert(t, "main.go", []byte(normalizeNewlines(string(bMain))))
 }
 
 func TestE2E_Handle_TestFiles_TargetIsTestAndCallsitesInTests(t *testing.T) {
 	ctx := t.Context()
-	g := goldie.New(t, goldie.WithFixtureDir(fixturesDir(t)))
-	dir := writeTempModuleFromInput(t, "e2e_tests_target_in_test")
+	g := genGoldie(t)
+	dir := writeTempModuleFromInput(t)
 
 	target := filepath.Join(dir, "helper_test.go") + ":HelperTarget"
 	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
@@ -301,14 +309,14 @@ func TestE2E_Handle_TestFiles_TargetIsTestAndCallsitesInTests(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read util_test.go: %v", err)
 	}
-	g.Assert(t, "e2e_tests_target_in_test_helper_test_go", []byte(normalizeNewlines(string(bHelper))))
-	g.Assert(t, "e2e_tests_target_in_test_util_test_go", []byte(normalizeNewlines(string(bCaller))))
+	g.Assert(t, "helper_test.go", []byte(normalizeNewlines(string(bHelper))))
+	g.Assert(t, "util_test.go", []byte(normalizeNewlines(string(bCaller))))
 }
 
 func TestE2E_Handle_TestFiles_CallsitesInTestsForProdFunc(t *testing.T) {
 	ctx := t.Context()
-	g := goldie.New(t, goldie.WithFixtureDir(fixturesDir(t)))
-	dir := writeTempModuleFromInput(t, "e2e_tests_callsites_in_tests")
+	g := genGoldie(t)
+	dir := writeTempModuleFromInput(t)
 
 	target := filepath.Join(dir, "util.go") + ":ProdFunc"
 	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
@@ -322,14 +330,14 @@ func TestE2E_Handle_TestFiles_CallsitesInTestsForProdFunc(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read util_test.go: %v", err)
 	}
-	g.Assert(t, "e2e_tests_callsites_in_tests_util_go", []byte(normalizeNewlines(string(bUtil))))
-	g.Assert(t, "e2e_tests_callsites_in_tests_util_test_go", []byte(normalizeNewlines(string(bTest))))
+	g.Assert(t, "util.go", []byte(normalizeNewlines(string(bUtil))))
+	g.Assert(t, "util_test.go", []byte(normalizeNewlines(string(bTest))))
 }
 
 func TestE2E_Distinguish_Functions_Methods_And_Qualified(t *testing.T) {
 	ctx := t.Context()
-	g := goldie.New(t, goldie.WithFixtureDir(fixturesDir(t)))
-	dir := writeTempModuleFromInput(t, "e2e_distinguish_calls")
+	g := genGoldie(t)
+	dir := writeTempModuleFromInput(t)
 
 	target := filepath.Join(dir, "main.go") + ":MyFunc"
 	if err := Run(ctx, Options{Target: target, WorkDir: dir}); err != nil {
@@ -339,13 +347,13 @@ func TestE2E_Distinguish_Functions_Methods_And_Qualified(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read main.go: %v", err)
 	}
-	g.Assert(t, "e2e_distinguish_calls_main_go", []byte(normalizeNewlines(string(b))))
+	g.Assert(t, "main.go", []byte(normalizeNewlines(string(b))))
 }
 
 func TestE2E_OnlyOneCtxParam_WhenCallingTwoCallees(t *testing.T) {
 	ctx := t.Context()
-	g := goldie.New(t, goldie.WithFixtureDir(fixturesDir(t)))
-	dir := writeTempModuleFromInput(t, "e2e_single_ctx_for_multiple_calls")
+	g := genGoldie(t)
+	dir := writeTempModuleFromInput(t)
 
 	// Run twice to simulate two separate operations: first adding ctx to MyOtherFunc1 callers,
 	// then to MyOtherFunc2 callers. MyFunc should only get one ctx parameter in total.
@@ -361,5 +369,5 @@ func TestE2E_OnlyOneCtxParam_WhenCallingTwoCallees(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read main.go: %v", err)
 	}
-	g.Assert(t, "e2e_single_ctx_for_multiple_calls_main_go", []byte(normalizeNewlines(string(b))))
+	g.Assert(t, "main.go", []byte(normalizeNewlines(string(b))))
 }
