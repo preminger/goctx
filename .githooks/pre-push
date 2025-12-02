@@ -178,4 +178,75 @@ if [[ "$missing_changelog" -ne 0 ]]; then
   exit 1
 fi
 
+# Compute the next version using svu and ensure it's present in CHANGELOG.md
+verify_next_version_in_changelog() {
+  local file="CHANGELOG.md"
+  if [[ ! -f "$file" ]]; then
+    echo "[pre-push] ERROR: $file not found in repository root." >&2
+    return 1
+  fi
+
+  # Try to locate svu in PATH first
+  local svu_bin="svu"
+  if ! command -v "$svu_bin" >/dev/null 2>&1; then
+    # Fallback to $(go env GOBIN)/svu or $(go env GOPATH)/bin/svu if available
+    if command -v go >/dev/null 2>&1; then
+      local gobin
+      gobin=$(go env GOBIN 2>/dev/null || true)
+      if [[ -n "$gobin" && -x "$gobin/svu" ]]; then
+        svu_bin="$gobin/svu"
+      else
+        local gopath
+        gopath=$(go env GOPATH 2>/dev/null || true)
+        if [[ -n "$gopath" && -x "$gopath/bin/svu" ]]; then
+          svu_bin="$gopath/bin/svu"
+        fi
+      fi
+    fi
+  fi
+
+  if ! command -v "$svu_bin" >/dev/null 2>&1; then
+    echo "[pre-push] ERROR: 'svu' is required for CHANGELOG validation but was not found in PATH." >&2
+    echo "[pre-push] Hint: Install svu (e.g., with Homebrew: 'brew install svu') or ensure it is on your PATH." >&2
+    return 1
+  fi
+
+  # Run svu to compute the next version. It typically returns a 'vX.Y.Z' tag.
+  local next_tag next_version
+  if ! next_tag=$("$svu_bin" next --force-patch-increment 2>/dev/null); then
+    echo "[pre-push] ERROR: Failed to execute '$svu_bin next --force-patch-increment'." >&2
+    return 1
+  fi
+  next_tag=$(printf "%s" "$next_tag" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
+  if [[ -z "$next_tag" ]]; then
+    echo "[pre-push] ERROR: svu returned an empty version." >&2
+    return 1
+  fi
+
+  # Strip a leading 'v' to match CHANGELOG headings format [X.Y.Z]
+  next_version=${next_tag#v}
+
+  # Check for heading presence: ## [X.Y.Z] - YYYY-MM-DD
+  if ! grep -Eq "^## \[$next_version\] - [0-9]{4}-[0-9]{2}-[0-9]{2}$" "$file"; then
+    echo "[pre-push] ERROR: CHANGELOG.md is missing a release heading for version [$next_version]." >&2
+    echo "[pre-push] Hint: Add a section like '## [$next_version] - YYYY-MM-DD' and move entries from Unreleased." >&2
+    return 1
+  fi
+
+  # Check for link reference presence: [X.Y.Z]: https://...
+  if ! grep -Eq "^\[$next_version\]:\s+https?://" "$file"; then
+    echo "[pre-push] ERROR: CHANGELOG.md is missing the link reference definition for [$next_version]:" >&2
+    echo "[pre-push] Hint: Add a line near the bottom, e.g.:" >&2
+    echo "[pre-push]   [$next_version]: https://github.com/<org>/<repo>/compare/vA.B.C...v$next_version" >&2
+    return 1
+  fi
+
+  return 0
+}
+
+if ! verify_next_version_in_changelog; then
+  echo "[pre-push] Push aborted: CHANGELOG.md does not include the next version from svu." >&2
+  exit 1
+fi
+
 exit 0
