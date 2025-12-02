@@ -23,6 +23,10 @@ shift || true
 # Read lines from stdin: local_ref local_sha remote_ref remote_sha
 
 missing_changelog=0
+# Track whether this push includes any branch refs (refs/heads/*). When only tags
+# are being pushed (e.g., release pipeline pushing a tag), we will skip the
+# svu/CHANGELOG next-version verification.
+saw_branch_push=0
 # local_ref is intentionally unused; prefix with underscore to avoid unused warnings
 while read -r _local_ref local_sha remote_ref remote_sha; do
   # Skip if nothing to push for this ref
@@ -33,6 +37,11 @@ while read -r _local_ref local_sha remote_ref remote_sha; do
   # Only enforce on branch pushes (potential PRs), skip tags
   if [[ "$remote_ref" != refs/heads/* && "$remote_ref" == refs/tags/* ]]; then
     continue
+  fi
+
+  # Remember if we saw a branch push in this batch
+  if [[ "$remote_ref" == refs/heads/* ]]; then
+    saw_branch_push=1
   fi
 
   # Skip protected default branches
@@ -244,9 +253,18 @@ verify_next_version_in_changelog() {
   return 0
 }
 
-if ! verify_next_version_in_changelog; then
-  echo "[pre-push] Push aborted: CHANGELOG.md does not include the next version from svu." >&2
-  exit 1
+# Skip next-version verification in release/CI pipelines and on tag-only pushes
+# Conditions to skip:
+# - Explicit opt-out via SKIP_SVU_CHANGELOG_CHECK=1
+# - GoReleaser environment variables are present (GORELEASER or GORELEASER_CURRENT_TAG)
+# - No branch refs were part of this push (i.e., tag-only push)
+if [[ "${SKIP_SVU_CHANGELOG_CHECK:-}" == "1" || -n "${GORELEASER_CURRENT_TAG:-}" || -n "${GORELEASER:-}" || "$saw_branch_push" -eq 0 ]]; then
+  echo "[pre-push] Skipping svu next-version check (release/tag-only/opt-out)."
+else
+  if ! verify_next_version_in_changelog; then
+    echo "[pre-push] Push aborted: CHANGELOG.md does not include the next version from svu." >&2
+    exit 1
+  fi
 fi
 
 exit 0

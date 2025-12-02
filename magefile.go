@@ -150,6 +150,10 @@ func Build() error { // mage:help=Build artifacts using goreleaser (snapshot)
 
 // Release tags the next version with svu and runs goreleaser release.
 func Release() error { // mage:help=Create and push a new tag with svu, then goreleaser
+	if err := setSkipSVUChangelogCheck(); err != nil {
+		return err
+	}
+
 	mg.Deps(Init)
 
 	goBin, err := sh.Output("go", "env", "GOBIN")
@@ -195,6 +199,12 @@ func Release() error { // mage:help=Create and push a new tag with svu, then gor
 	}
 
 	return sh.Run("goreleaser", "--parallelism", strconv.Itoa(nCores), "release", "--clean")
+}
+
+// setSkipSVUChangelogCheck sets the SKIP_SVU_CHANGELOG_CHECK environment variable.
+func setSkipSVUChangelogCheck() error {
+	// Set SKIP_SVU_CHANGELOG_CHECK env var.
+	return os.Setenv("SKIP_SVU_CHANGELOG_CHECK", "1")
 }
 
 // getRepoRoot returns the absolute path to the repository root (git top-level).
