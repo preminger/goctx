@@ -66,6 +66,12 @@ func shouldStopAt(funcDecl *ast.FuncDecl, pkg *packages.Package, opts Options, s
 		return true, StopReasonMain, nil
 	}
 
+	// testing TestMain termination: treat like main and inject ctx := context.Background()
+	if isTestMainFunction(funcDecl, pkg) {
+		slog.Debug("stop at TestMain function", slog.String("func", funcDecl.Name.Name))
+		return true, StopReasonMain, nil
+	}
+
 	return false, StopReasonNone, nil
 }
 
@@ -77,6 +83,64 @@ func isMainFunction(fn *ast.FuncDecl, pkg *packages.Package) bool {
 		return false
 	}
 	if pkg.PkgPath != FuncNameMain && pkg.Name != FuncNameMain {
+		return false
+	}
+	if fn.Type == nil || fn.Type.Params == nil {
+		return false
+	}
+	if fn.Type.TypeParams != nil {
+		return false
+	}
+	if len(fn.Type.Params.List) != 0 {
+		return false
+	}
+	if fn.Type.Results != nil {
+		return false
+	}
+
+	return true
+}
+
+// isTestMainFunction reports whether the function is the Go test entry point:
+//
+//	func TestMain(m *testing.M)
+//
+// It must be a top-level function named TestMain with exactly one parameter of type *testing.M.
+func isTestMainFunction(fn *ast.FuncDecl, pkg *packages.Package) bool {
+	if fn == nil || fn.Recv != nil {
+		return false
+	}
+	if fn.Name == nil || fn.Name.Name != "TestMain" {
+		return false
+	}
+	if fn.Type == nil || fn.Type.Params == nil {
+		return false
+	}
+	if fn.Type.TypeParams != nil {
+		return false
+	}
+
+	// Check that the sole parameter is of type *testing.M
+	if len(fn.Type.Params.List) != 1 {
+		return false
+	}
+	t := pkg.TypesInfo.TypeOf(fn.Type.Params.List[0].Type)
+	pt, ok := t.(*types.Pointer)
+	if !ok {
+		return false
+	}
+	named, ok := pt.Elem().(*types.Named)
+	if !ok {
+		return false
+	}
+	if named.Obj() == nil || named.Obj().Pkg() == nil {
+		return false
+	}
+	if named.Obj().Name() != "M" || named.Obj().Pkg().Path() != "testing" {
+		return false
+	}
+
+	if fn.Type.Results != nil {
 		return false
 	}
 

@@ -126,6 +126,23 @@ func TestE2E_Propagate_StopAtMain_PreservesComments(t *testing.T) {
 	g.Assert(t, "main.go", normalizeNewlines(bMain))
 }
 
+func TestE2E_Propagate_StopAtTestMain_PreservesComments(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+	g := genGoldie(t)
+	dir := writeTempModuleFromInput(t)
+	// Start from callee and propagate upwards; should stop at TestMain and inject ctx := context.Background()
+	target := filepath.Join(dir, "a", "b.go") + ":Callee"
+	require.NoError(t, Run(ctx, Options{Target: target, WorkDir: dir}))
+	bA := fsutils.MustRead(filepath.Join(dir, "a", "a.go"))
+	bB := fsutils.MustRead(filepath.Join(dir, "a", "b.go"))
+	bMainTest := fsutils.MustRead(filepath.Join(dir, "main_test.go"))
+	g.Assert(t, filepath.Join("a", "a.go"), normalizeNewlines(bA))
+	g.Assert(t, filepath.Join("a", "b.go"), normalizeNewlines(bB))
+	g.Assert(t, "main_test.go", normalizeNewlines(bMainTest))
+}
+
 func TestE2E_HTTPBoundary_PreservesComments(t *testing.T) {
 	t.Parallel()
 
