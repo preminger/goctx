@@ -16,6 +16,8 @@ import (
 )
 
 func genGoldie(t *testing.T) *goldie.Goldie {
+	t.Helper()
+
 	return goldie.New(
 		t,
 		goldie.WithFixtureDir(fixturesDir(t)),
@@ -223,7 +225,7 @@ func TestE2E_Methods_Propagation(t *testing.T) {
 			target := filepath.Join(dir, "main.go") + ":target"
 			require.NoError(t, Run(ctx, Options{Target: target, WorkDir: dir}))
 			b := fsutils.MustRead(filepath.Join(dir, "main.go"))
-			g.Assert(t, filepath.Join("main.go"), normalizeNewlines(b))
+			g.Assert(t, "main.go", normalizeNewlines(b))
 		})
 	}
 }

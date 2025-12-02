@@ -132,7 +132,7 @@ func ensureCtxAvailableAtBoundary(pkg *packages.Package, file *ast.File, fn *ast
 			return false, errors.New("determining http request parameter name")
 		}
 		stmt := makeAssignCtxFromRequest(reqName)
-		insertAtFuncStartF(pkg.Fset, file, fn, stmt)
+		insertAtFuncStartF(fn, stmt)
 		slog.Debug("inserted ctx := req.Context()", slog.String("func", fn.Name.Name), slog.String("req", reqName))
 		return true, nil
 	case StopReasonTest:
@@ -141,14 +141,14 @@ func ensureCtxAvailableAtBoundary(pkg *packages.Package, file *ast.File, fn *ast
 			// Fall back to background if we cannot determine a testing param name (should be rare)
 			ensureImport(pkg.Fset, file, "context")
 			stmt := makeAssignCtxBackground()
-			insertAtFuncStartF(pkg.Fset, file, fn, stmt)
+			insertAtFuncStartF(fn, stmt)
 			slog.Debug("inserted ctx := context.Background() (fallback for testing boundary)", slog.String("func", fn.Name.Name))
 			return true, nil
 		}
 		stmt := makeAssignCtxFromTesting(testName)
 		// For testing boundaries, ensure ctx is initialized BEFORE any statements (including
 		// leading blank assigns like `_ = HelperTarget(...)`) so that those calls can use ctx.
-		insertAtFuncStartF(pkg.Fset, file, fn, stmt)
+		insertAtFuncStartF(fn, stmt)
 		slog.Debug("inserted ctx := t.Context()", slog.String("func", fn.Name.Name), slog.String("t", testName))
 		return true, nil
 	default:
@@ -195,16 +195,14 @@ func insertAfterLeadingBlankAssignsF(fset *token.FileSet, file *ast.File, fn *as
 				}
 			}
 		}
-	} else {
+	} else if len(fn.Body.List) > 0 {
 		// idx == 0: place after any leading comment groups present before the first statement.
-		if len(fn.Body.List) > 0 {
-			firstStmtPos := fn.Body.List[0].Pos()
-			base = fn.Body.Lbrace + 1
-			for _, cg := range file.Comments {
-				if cg.Pos() > fn.Body.Lbrace && cg.End() < firstStmtPos {
-					if cg.End()+1 > base {
-						base = cg.End() + 1
-					}
+		firstStmtPos := fn.Body.List[0].Pos()
+		base = fn.Body.Lbrace + 1
+		for _, cg := range file.Comments {
+			if cg.Pos() > fn.Body.Lbrace && cg.End() < firstStmtPos {
+				if cg.End()+1 > base {
+					base = cg.End() + 1
 				}
 			}
 		}
@@ -218,7 +216,7 @@ func insertAfterLeadingBlankAssignsF(fset *token.FileSet, file *ast.File, fn *as
 // insertAtFuncStartF inserts stmt as the first statement of fn.Body, adjusting
 // token positions so formatting is stable and existing comments remain attached
 // to their intended lines.
-func insertAtFuncStartF(fset *token.FileSet, file *ast.File, fn *ast.FuncDecl, stmt ast.Stmt) {
+func insertAtFuncStartF(fn *ast.FuncDecl, stmt ast.Stmt) {
 	if fn == nil || fn.Body == nil {
 		return
 	}
