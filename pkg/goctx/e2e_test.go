@@ -9,10 +9,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/preminger/goctx/pkg/util/fsutils"
 	"github.com/sebdah/goldie/v2"
 	"github.com/stretchr/testify/require"
-
-	"github.com/preminger/goctx/pkg/util/fsutils"
 )
 
 func genGoldie(t *testing.T) *goldie.Goldie {
@@ -51,17 +50,16 @@ func inputDir(t *testing.T) string {
 // It copies input data to a temporary directory and writes a go.mod file.
 func writeTempModuleFromInput(t *testing.T) string {
 	t.Helper()
+
 	src := filepath.Join(inputDir(t), t.Name())
 	dst := t.TempDir()
+
 	// Copy all files from src to dst, preserving relative paths
-	if err := copyDir(t, src, dst); err != nil {
-		t.Fatalf("copyDir: %v", err)
-	}
+	require.NoError(t, copyDir(t, src, dst))
+
 	// Always write a minimal go.mod to allow packages.Load to work in that dir
 	gomod := filepath.Join(dst, "go.mod")
-	if err := os.WriteFile(gomod, []byte("module example.com/e2e\n\ngo 1.21\n"), 0o644); err != nil {
-		t.Fatalf("write go.mod: %v", err)
-	}
+	require.NoError(t, os.WriteFile(gomod, []byte("module example.com/e2e\n\ngo 1.21\n"), 0o644))
 
 	return dst
 }
@@ -115,12 +113,12 @@ func TestE2E_Propagate_StopAtMain_PreservesComments(t *testing.T) {
 	dir := writeTempModuleFromInput(t)
 	target := filepath.Join(dir, "a", "b.go") + ":Callee"
 	require.NoError(t, Run(ctx, Options{Target: target, WorkDir: dir}))
+
 	bA := fsutils.MustRead(filepath.Join(dir, "a", "a.go"))
 	bB := fsutils.MustRead(filepath.Join(dir, "a", "b.go"))
 	bMain, err := os.ReadFile(filepath.Join(dir, "main.go"))
-	if err != nil {
-		t.Fatalf("read main.go: %v", err)
-	}
+	require.NoError(t, err)
+
 	g.Assert(t, "a.go", normalizeNewlines(bA))
 	g.Assert(t, "b.go", normalizeNewlines(bB))
 	g.Assert(t, "main.go", normalizeNewlines(bMain))

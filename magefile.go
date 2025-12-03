@@ -13,9 +13,8 @@ import (
 
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
-	"github.com/samber/lo"
-
 	"github.com/preminger/goctx/internal/ui"
+	"github.com/samber/lo"
 )
 
 // Default target to run when none is specified.

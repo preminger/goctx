@@ -7,9 +7,8 @@ import (
 	"go/types"
 	"log/slog"
 
-	"golang.org/x/tools/go/packages"
-
 	"github.com/preminger/goctx/pkg/util/fsutils"
+	"golang.org/x/tools/go/packages"
 )
 
 // targetResolution bundles the data about a resolved target function.
