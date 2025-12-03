@@ -7,9 +7,8 @@ import (
 
 	"github.com/charmbracelet/fang"
 	"github.com/charmbracelet/log"
-	"github.com/spf13/cobra"
-
 	"github.com/preminger/goctx/pkg/goctx"
+	"github.com/spf13/cobra"
 )
 
 const shortDescription = "Command-line Go utility that automatically adds missing 'plumbing' for `context.Context` parameters along the call-graph leading to a given function."

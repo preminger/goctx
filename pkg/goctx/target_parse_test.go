@@ -1,44 +1,37 @@
 package goctx
 
 import (
-	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestParseTargetSpec_OK(t *testing.T) {
 	sp, err := parseTargetSpec("pkg/foo.go:FuncInNeedOfContext")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if sp.File != filepath.ToSlash("pkg/foo.go") || sp.FuncName != "FuncInNeedOfContext" || sp.LineNumber != 0 {
-		t.Fatalf("unexpected spec: %+v", sp)
-	}
+	require.NoError(t, err)
+
+	assert.Equal(t, "pkg/foo.go", sp.File)
+	assert.Equal(t, "FuncInNeedOfContext", sp.FuncName)
+	assert.Equal(t, 0, sp.LineNumber)
 
 	sp, err = parseTargetSpec("pkg/foo.go:FuncInNeedOfContext:2")
-	if err != nil {
-		to := sp
-		_ = to
-		// should not error
-	}
-	if err != nil {
-		t.Fatalf("unexpected error with line-number: %v", err)
-	}
-	if sp.LineNumber != 2 {
-		t.Fatalf("expected line-number 2, got %d", sp.LineNumber)
-	}
+	require.NoError(t, err)
+	assert.Equal(t, 2, sp.LineNumber)
 }
 
 func TestParseTargetSpec_Errors(t *testing.T) {
-	if _, err := parseTargetSpec(""); err == nil {
-		t.Fatalf("expected error for empty string")
-	}
-	if _, err := parseTargetSpec("pkg/foo.go:"); err == nil {
-		t.Fatalf("expected error for missing function name")
-	}
-	if _, err := parseTargetSpec("pkg/foo.go:Func:0"); err == nil {
-		t.Fatalf("expected error for zero line-number")
-	}
-	if _, err := parseTargetSpec("notvalid"); err == nil {
-		t.Fatalf("expected error for invalid format")
-	}
+	var err error
+
+	_, err = parseTargetSpec("")
+	require.Error(t, err)
+
+	_, err = parseTargetSpec("pkg/foo.go:")
+	require.Error(t, err)
+
+	_, err = parseTargetSpec("pkg/foo.go:Func:0")
+	require.Error(t, err)
+
+	_, err = parseTargetSpec("notvalid")
+	require.Error(t, err)
 }
