@@ -1,6 +1,6 @@
 module github.com/preminger/goctx
 
-go 1.25.4
+go 1.24.11
 
 require (
 	charm.land/lipgloss/v2 v2.0.0-beta.3.0.20251106193318-19329a3e8410
