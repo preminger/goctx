@@ -57,6 +57,11 @@ resolution is ambiguous and the tool will ask you to disambiguate by line number
 				return fmt.Errorf("parsing stop-at: %w", err)
 			}
 
+			tags, err := cmd.Flags().GetString(OptNameTags)
+			if err != nil {
+				return fmt.Errorf("parsing tags: %w", err)
+			}
+
 			httpMode, err := cmd.Flags().GetBool(OptNameHTTP)
 			if err != nil {
 				return fmt.Errorf("parsing html: %w", err)
@@ -71,7 +76,14 @@ resolution is ambiguous and the tool will ask you to disambiguate by line number
 				logHandler.SetLevel(log.DebugLevel)
 			}
 
-			slog.Debug("flags parsed", slog.String("stopAt", stopAt), slog.Bool("html", httpMode), slog.Bool("verbose", verbose), slog.Int("argc", len(cmd.Flags().Args())))
+			slog.Debug(
+				"flags parsed",
+				slog.String("stopAt", stopAt),
+				slog.String("tags", tags),
+				slog.Bool("html", httpMode),
+				slog.Bool("verbose", verbose),
+				slog.Int("argc", len(cmd.Flags().Args())),
+			)
 
 			if len(cmd.Flags().Args()) < 1 {
 				return cmd.Help()
@@ -80,17 +92,25 @@ resolution is ambiguous and the tool will ask you to disambiguate by line number
 			opts := goctx.Options{
 				Target:  args[0],
 				StopAt:  stopAt,
+				Tags:    tags,
 				HTML:    httpMode,
 				WorkDir: ".",
 			}
 
-			slog.Debug("invoking run", slog.String("target", opts.Target), slog.String("stopAt", opts.StopAt), slog.Bool("html", opts.HTML), slog.String("workDir", opts.WorkDir))
+			slog.Debug(
+				"invoking run",
+				slog.String("target", opts.Target),
+				slog.String("stopAt", opts.StopAt),
+				slog.Bool("html", opts.HTML),
+				slog.String("workDir", opts.WorkDir),
+			)
 			return goctx.Run(cmd.Context(), opts)
 		},
 	}
 
 	rootCmd.Flags().String(OptNameStopAt, "", "Optional terminating function path of the form path/to/file.go:FuncName[:N]")
 	rootCmd.Flags().Bool(OptNameHTTP, false, "Terminate at http.HandlerFunc boundaries and derive ctx from req.Context()")
+	rootCmd.Flags().StringP(OptNameTags, "t", "", "List of build tags to consider during loading (same syntax as 'go build -tags', e.g. 'tag1,tag2' or '!exclude')")
 	rootCmd.PersistentFlags().BoolP(OptNameVerbose, OptNameVerboseShortHand, false, "Verbose output")
 
 	return rootCmd

@@ -105,6 +105,30 @@ func TestE2E_Simple_AddCtx_PreservesComments(t *testing.T) {
 	g.Assert(t, "main.go", normalizeNewlines(b))
 }
 
+func TestE2E_BuildTags_Include(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+	dir := writeTempModuleFromInput(t)
+
+	// Target a function that exists only behind the build tag "mytag"
+	target := filepath.Join(dir, "tagged.go") + ":FuncInNeedOfContext"
+	err := Run(ctx, Options{Target: target, WorkDir: dir, Tags: "mytag"})
+	require.NoError(t, err)
+}
+
+func TestE2E_BuildTags_ExcludeNegative(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+	dir := writeTempModuleFromInput(t)
+
+	// Function is behind tag "xyz"; with negative tag it must be excluded
+	target := filepath.Join(dir, "xyz.go") + ":FuncOnlyWhenXYZ"
+	err := Run(ctx, Options{Target: target, WorkDir: dir, Tags: "!xyz"})
+	require.Error(t, err)
+}
+
 func TestE2E_Propagate_StopAtMain_PreservesComments(t *testing.T) {
 	t.Parallel()
 
