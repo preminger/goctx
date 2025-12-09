@@ -222,8 +222,8 @@ verify_next_version_in_changelog() {
 
   # Run svu to compute the next version. It typically returns a 'vX.Y.Z' tag.
   local next_tag next_version
-  if ! next_tag=$("$svu_bin" next --force-patch-increment 2>/dev/null); then
-    echo "[pre-push] ERROR: Failed to execute '$svu_bin next --force-patch-increment'." >&2
+  if ! next_tag=$("$svu_bin" next 2>/dev/null); then
+    echo "[pre-push] ERROR: Failed to execute '$svu_bin next'." >&2
     return 1
   fi
   next_tag=$(printf "%s" "$next_tag" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')

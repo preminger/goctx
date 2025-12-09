@@ -17,4 +17,4 @@ brew "node"
 brew "markdownlint-cli2"
 
 # Go-based tools
-go "github.com/caarlos0/svu"
+go "github.com/caarlos0/svu/v3"
