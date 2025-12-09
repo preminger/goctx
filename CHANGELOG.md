@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0] - 2025-12-09
+
+### Added
+
+- Added `-t`/`--tags` option to the CLI to control Go build tags affecting file visibility during analysis.
+
 ## [0.14.7] - 2025-12-08
 
 ### Changed
@@ -346,7 +352,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.14.7...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.15.0...HEAD
+[0.15.0]: https://github.com/preminger/goctx/compare/v0.14.7...v0.15.0
 [0.14.7]: https://github.com/preminger/goctx/compare/v0.14.6...v0.14.7
 [0.14.6]: https://github.com/preminger/goctx/compare/v0.14.5...v0.14.6
 [0.14.5]: https://github.com/preminger/goctx/compare/v0.14.4...v0.14.5

@@ -27,6 +27,9 @@ type Options struct {
 	StopAt  string
 	HTML    bool
 	WorkDir string
+	// Tags are passed through to the Go loader as -tags=... build flags, controlling
+	// which files behind build constraints are visible to the tool.
+	Tags string
 }
 
 // Run performs the goctx according to Options.
@@ -42,7 +45,7 @@ func Run(_ context.Context, opts Options) error {
 	}
 
 	// Load all packages in the workspace
-	pkgs, err := loadAllPackages(firstNonEmpty(opts.WorkDir, "."))
+	pkgs, err := loadAllPackages(firstNonEmpty(opts.WorkDir, "."), opts.Tags)
 	if err != nil {
 		slog.Debug("loadAllPackages error", slog.String("workDir", firstNonEmpty(opts.WorkDir, ".")), slog.Any("error", err))
 		return err
@@ -119,7 +122,7 @@ func Run(_ context.Context, opts Options) error {
 // directories that belong to the same module when dir is a subdirectory.
 // Now we discover the module root (by locating the nearest go.mod upwards from dir)
 // and set packages.Config.Dir to that root, ensuring the entire module is loaded.
-func loadAllPackages(dir string) ([]*packages.Package, error) {
+func loadAllPackages(dir string, tags string) ([]*packages.Package, error) {
 	slog.Debug("loading packages", slog.String("dir", dir))
 
 	moduleRoot := findModuleRoot(dir)
@@ -140,6 +143,11 @@ func loadAllPackages(dir string) ([]*packages.Package, error) {
 			packages.NeedSyntax,
 		Dir:   loadDir,
 		Tests: true, // include _test.go files and test variants
+	}
+	if strings.TrimSpace(tags) != "" {
+		// Pass through build tags to include/exclude files under build constraints
+		cfg.BuildFlags = []string{"-tags=" + tags}
+		slog.Debug("applied build tags", slog.String("tags", tags))
 	}
 	pkgs, err := packages.Load(cfg, "./...")
 	if err != nil {
