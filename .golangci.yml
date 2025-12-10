@@ -422,7 +422,7 @@ linters:
           - forbidigo
           - gochecknoglobals
           - wrapcheck
-        path: magefile\.go$
+        path: stavefile\.go$
     paths:
       - third_party$
       - builtin$

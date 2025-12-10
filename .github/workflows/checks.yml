@@ -102,16 +102,11 @@ jobs:
         if: steps.brew_install.outputs.cache-hit != 'true'
         run: brew bundle --no-upgrade --file=Brewfile
 
-      - name: Run Mage
-        uses: magefile/mage-action@v3
-        with:
-          install-only: true
-
       - name: Project init (CI-safe)
-        run: mage init
+        run: stave init
 
       - name: Run tests
-        run: mage test
+        run: stave test
 
       - name: Verify no uncommitted changes
         shell: bash

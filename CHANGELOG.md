@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.0] - 2025-12-09
+
+### Changed
+
+- Move from [Mage](https://magefile.org/) to [Stave](https://github.com/yaklabco/stave) as build tool.
+
 ## [0.15.0] - 2025-12-09
 
 ### Added
@@ -352,7 +358,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.15.0...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.16.0...HEAD
+[0.16.0]: https://github.com/preminger/goctx/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/preminger/goctx/compare/v0.14.7...v0.15.0
 [0.14.7]: https://github.com/preminger/goctx/compare/v0.14.6...v0.14.7
 [0.14.6]: https://github.com/preminger/goctx/compare/v0.14.5...v0.14.6

@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/preminger/goctx/pkg/util/fsutils"
 	"github.com/sebdah/goldie/v2"
 	"github.com/stretchr/testify/require"
+	"github.com/yaklabco/stave/pkg/fsutils"
 )
 
 func genGoldie(t *testing.T) *goldie.Goldie {
