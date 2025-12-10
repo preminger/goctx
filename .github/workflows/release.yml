@@ -86,7 +86,10 @@ jobs:
         if: steps.brew_install.outputs.cache-hit != 'true'
         run: brew bundle --no-upgrade --file=Brewfile
 
-      - name: Project init (CI-safe)
+      - name: Install stave
+        run: go install github.com/yaklabco/stave@latest
+
+      - name: Project init
         run: stave init
 
       - name: Parallelism check
