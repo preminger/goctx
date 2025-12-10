@@ -78,6 +78,9 @@ jobs:
       - name: Project init (CI-safe)
         run: stave init
 
+      - name: Parallelism check
+        run: stave parallelismcheck
+
       - name: Run tests
         run: stave test
 
