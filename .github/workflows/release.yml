@@ -82,47 +82,21 @@ jobs:
           restore-keys: |
             brew-install-${{ runner.os }}-
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 'lts/*'
-
-      - name: Get Node version
-        id: nodever
-        run: echo "v=$(node -v)" >> "$GITHUB_OUTPUT"
-
-      - name: Restore node_modules
-        id: nodemod
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: node-mod-${{ runner.os }}-${{ steps.nodever.outputs.v }}-${{ hashFiles('package-lock.json') }}
-
-      - name: Install deps (only on cache miss)
-        if: steps.nodemod.outputs.cache-hit != 'true'
-        run: npm ci --no-audit --no-fund
-
-      - name: Save node_modules (optional; actions/cache auto-saves on miss)
-        if: steps.nodemod.outputs.cache-hit != 'true'
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: node-mod-${{ runner.os }}-${{ steps.nodever.outputs.v }}-${{ hashFiles('package-lock.json') }}
-
       - name: Install Homebrew tools (only if cache miss)
         if: steps.brew_install.outputs.cache-hit != 'true'
         run: brew bundle --no-upgrade --file=Brewfile
 
-      - name: Run Mage
-        uses: magefile/mage-action@v3
-        with:
-          install-only: true
+      - name: Install stave
+        run: go install github.com/yaklabco/stave@latest
 
-      - name: Project init (CI-safe)
-        run: mage init
+      - name: Project init
+        run: stave init
+
+      - name: Parallelism check
+        run: stave parallelismcheck
 
       - name: Run tests
-        run: mage test
+        run: stave test
 
       - name: Configure git user
         run: |
@@ -131,7 +105,7 @@ jobs:
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Perform release
-        run: mage release
+        run: stave release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}

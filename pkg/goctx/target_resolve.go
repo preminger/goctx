@@ -7,7 +7,7 @@ import (
 	"go/types"
 	"log/slog"
 
-	"github.com/preminger/goctx/pkg/util/fsutils"
+	"github.com/yaklabco/stave/pkg/fsutils"
 	"golang.org/x/tools/go/packages"
 )
 
