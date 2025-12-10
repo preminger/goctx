@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Move from [Mage](https://magefile.org/) to [Stave](https://github.com/yaklabco/stave) as build tool.
 
+- Change `release.yml` workflow triggering to manual-only.
+
 ## [0.15.0] - 2025-12-09
 
 ### Added
