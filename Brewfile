@@ -11,8 +11,4 @@ brew "golangci-lint"
 brew "golangci-lint-langserver"
 brew "goreleaser"
 
-brew "markdownlint-cli2"
-
-# yaklabco tap
-tap "yaklabco/tap"
-cask "stave"
+go "github.com/yaklabco/stave"
