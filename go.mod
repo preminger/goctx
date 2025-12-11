@@ -1,6 +1,6 @@
 module github.com/preminger/goctx
 
-go 1.24.11
+go 1.25.5
 
 require (
 	charm.land/lipgloss/v2 v2.0.0-beta.3.0.20251106193318-19329a3e8410
@@ -11,7 +11,7 @@ require (
 	github.com/sebdah/goldie/v2 v2.8.0
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
-	github.com/yaklabco/stave v0.2.5
+	github.com/yaklabco/stave v0.2.6
 	golang.org/x/tools v0.40.0
 )
 
@@ -20,12 +20,12 @@ require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/bitfield/gotestdox v0.2.2 // indirect
 	github.com/caarlos0/svu/v3 v3.2.4 // indirect
-	github.com/charmbracelet/colorprofile v0.3.3 // indirect
+	github.com/charmbracelet/colorprofile v0.4.1 // indirect
 	github.com/charmbracelet/lipgloss v1.1.0 // indirect
-	github.com/charmbracelet/ultraviolet v0.0.0-20251208150253-2e071fef09ba // indirect
-	github.com/charmbracelet/x/ansi v0.11.2 // indirect
+	github.com/charmbracelet/ultraviolet v0.0.0-20251211195649-3a51f4048cae // indirect
+	github.com/charmbracelet/x/ansi v0.11.3 // indirect
 	github.com/charmbracelet/x/cellbuf v0.0.14 // indirect
-	github.com/charmbracelet/x/exp/charmtone v0.0.0-20251201173703-9f73bfd934ff // indirect
+	github.com/charmbracelet/x/exp/charmtone v0.0.0-20251211193724-5cb91212b903 // indirect
 	github.com/charmbracelet/x/term v0.2.2 // indirect
 	github.com/charmbracelet/x/termios v0.1.1 // indirect
 	github.com/charmbracelet/x/windows v0.2.2 // indirect
