@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	"github.com/preminger/goctx/cmd/goctx"
@@ -18,7 +17,6 @@ func actualMain() int {
 	rootCmd := goctx.NewRootCmd(ctx)
 
 	if err := goctx.ExecuteWithFang(ctx, rootCmd); err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
 
