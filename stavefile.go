@@ -3,7 +3,6 @@
 package main
 
 import (
-	"bufio"
 	"cmp"
 	"errors"
 	"fmt"
@@ -15,7 +14,6 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/log"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/samber/lo"
 	"github.com/yaklabco/stave/cmd/stave/version"
 	"github.com/yaklabco/stave/config"
@@ -367,28 +365,6 @@ type Debug st.Namespace
 func (Debug) Parallelism() {
 	outputf("STAVE_NUM_PROCESSORS=%q\n", os.Getenv("STAVE_NUM_PROCESSORS"))
 	outputf("GOMAXPROCS=%q\n", os.Getenv("GOMAXPROCS"))
-}
-
-// DumpStdin reads stdin and dumps each line via spew (debugging utility)
-func (Debug) DumpStdin() error {
-	scanner := bufio.NewScanner(os.Stdin)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		spew.Dump(line)
-	}
-
-	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("reading from stdin: %w", err)
-	}
-
-	return nil
-}
-
-// Say prints arguments with their types (example target demonstrating args)
-func (Debug) Say(msg string, i int, b bool, d time.Duration) error {
-	outputf("%v(%T) %v(%T) %v(%T) %v(%T)\n", msg, msg, i, i, b, b, d, d)
-	return nil
 }
 
 // *
