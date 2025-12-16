@@ -3,7 +3,6 @@
 package main
 
 import (
-	"bufio"
 	"cmp"
 	"errors"
 	"fmt"
@@ -15,7 +14,6 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/log"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/samber/lo"
 	"github.com/yaklabco/stave/cmd/stave/version"
 	"github.com/yaklabco/stave/config"
@@ -34,53 +32,95 @@ func init() {
 	}
 }
 
-// outputf writes a formatted string to stdout.
-// Uses fmt.Fprintf for output (avoids forbidigo which bans fmt.Print* patterns).
-func outputf(format string, args ...interface{}) {
-	_, _ = fmt.Fprintf(os.Stdout, format, args...)
-}
-
-// outputln writes a string to stdout with a trailing newline.
-func outputln(s string) {
-	_, _ = fmt.Fprintln(os.Stdout, s)
-}
-
-// isQuietMode returns true if output should be suppressed (CI environments).
-// Checks STAVE_QUIET=1 first, then common CI environment variables.
-func isQuietMode() bool {
-	if os.Getenv("STAVE_QUIET") == "1" {
-		return true
-	}
-	// Common CI environment variables
-	ciVars := []string{"CI", "GITHUB_ACTIONS", "GITLAB_CI", "JENKINS_URL", "CIRCLECI", "BUILDKITE"}
-	for _, v := range ciVars {
-		if os.Getenv(v) != "" {
-			return true
-		}
-	}
-	return false
-}
-
-// Default target to run when none is specified.
-// This is a stave convention - stavefiles define this global to set the default target.
-//
+// *********************************************************************
+// * Default target
+// * (This is a stave convention - stavefiles define this global to set the default target.)
+// *
 
 var Default = All
 
+// *
+// *********************************************************************
+
+// *********************************************************************
+// * Default namespace
+// *
+
+// All runs init, test:all, and build in sequence
 func All() error {
-	st.Deps(Init, Test)
+	st.Deps(Init, Test.All)
 	st.Deps(Build)
 
 	return nil
 }
 
-// Init installs required tools and sets up git hooks and modules.
-func Init() { // stave:help=Install dev tools (Brewfile), setup hooks (respects current choice), and tidy modules
-	st.Deps(Brew, SetupHooks, InitGo)
+// Init installs required tools and sets up git hooks and modules
+func Init() {
+	st.Deps(Prereq.Brew, Setup.Hooks, Prereq.Go)
 }
 
-func InitGo() error {
-	st.Deps(Brew)
+// Build builds artifacts via goreleaser snapshot build
+func Build() error {
+	st.Deps(Init)
+
+	nCoresStr := cmp.Or(os.Getenv("STAVE_NUM_PROCESSORS"), "1")
+
+	if err := sh.RunV("goreleaser", "check"); err != nil {
+		return err
+	}
+
+	return sh.RunV("goreleaser", "--parallelism", nCoresStr, "build", "--snapshot", "--clean")
+}
+
+// Release tags the next version and runs goreleaser release
+func Release() error {
+	if err := setSkipNextVerChangelogCheck(); err != nil {
+		return err
+	}
+
+	st.Deps(Init)
+
+	nextTag, err := changelog.NextTag()
+	if err != nil {
+		return err
+	}
+
+	slog.Info("computed next tag", slog.String("next_tag", nextTag))
+
+	if err := sh.Run("git", "tag", nextTag); err != nil {
+		return err
+	}
+
+	if err := sh.Run("git", "push", "--tags"); err != nil {
+		return err
+	}
+
+	nCoresStr := cmp.Or(os.Getenv("STAVE_NUM_PROCESSORS"), "1")
+
+	return sh.Run("goreleaser", "--parallelism", nCoresStr, "release", "--clean")
+}
+
+// Clean removes the dist directory created by goreleaser
+func Clean() error {
+	return errors.Join(
+		sh.Rm("dist"),
+		sh.Rm(filepath.Join("app", "goctx", "dist")),
+	)
+}
+
+// *
+// * Default namespace
+// *********************************************************************
+
+// *********************************************************************
+// * Prereq namespace
+// *
+
+type Prereq st.Namespace
+
+// Go tidies modules and runs go generate
+func (Prereq) Go() error {
+	st.Deps(Prereq.Brew)
 
 	if err := sh.Run("go", "mod", "tidy"); err != nil {
 		return err
@@ -93,18 +133,34 @@ func InitGo() error {
 	return sh.Run("go", "mod", "tidy")
 }
 
-func Brew() error {
-	// Install tools from Brewfile.
+// Brew installs tools from Brewfile via Homebrew
+func (Prereq) Brew() error {
 	return sh.Run("brew", "bundle", "--file=Brewfile")
 }
 
-func SetupHooks() error { // stave:help=Switch git hooks system to stave
-	st.Deps(Brew)
+// *
+// * Prereq namespace
+// *********************************************************************
+
+// *********************************************************************
+// * Setup namespace
+// *
+
+type Setup st.Namespace
+
+// Hooks configures git hooks to use stave targets
+func (Setup) Hooks() error {
+	st.Deps(Prereq.Brew)
 
 	cs := ui.GetFangScheme()
 	successStyle := lipgloss.NewStyle().Foreground(cs.Flag)
 	labelStyle := lipgloss.NewStyle().Foreground(cs.Base)
 	valueStyle := lipgloss.NewStyle().Bold(true).Foreground(cs.Program)
+
+	// Ensure stave.yaml exists with hooks config
+	if err := ensureStaveYAML(); err != nil {
+		return err
+	}
 
 	// Install stave hooks
 	if err := sh.Run("stave", "--hooks", "install"); err != nil {
@@ -131,18 +187,23 @@ func SetupHooks() error { // stave:help=Switch git hooks system to stave
 	return nil
 }
 
-// hookSystem represents the active git hook system.
-// findStaveHooks returns a list of hook names configured in stave.yaml.
-func findStaveHooks() []string {
-	cfg, err := config.Load(nil)
-	if err != nil || cfg.Hooks == nil {
-		return nil
-	}
-	return cfg.Hooks.HookNames()
+// *
+// * Setup namespace
+// *********************************************************************
+
+// *********************************************************************
+// * Lint namespace
+// *
+
+type Lint st.Namespace
+
+// All runs ling:go after lint:markdown and init
+func (Lint) All() {
+	st.Deps(Init, Lint.Markdown, Lint.Go)
 }
 
-// Markdownlint runs markdownlint-cli2 on all tracked Markdown files.
-func Markdownlint() error { // stave:help=Run markdownlint on Markdown files
+// Markdown runs markdownlint-cli2 on all tracked Markdown files
+func (Lint) Markdown() error {
 	st.Deps(Init)
 
 	markdownFilesList, err := sh.Output("git", "ls-files", "--cached", "--others", "--exclude-standard", "--", "*.md")
@@ -163,8 +224,8 @@ func Markdownlint() error { // stave:help=Run markdownlint on Markdown files
 	return sh.Run("markdownlint-cli2", files...)
 }
 
-// LintGo runs golangci-lint with auto-fix and parallel runner options enabled.
-func LintGo() error {
+// Go runs golangci-lint with auto-fix enabled
+func (Lint) Go() error {
 	st.Deps(Init)
 	out, err := sh.Output("golangci-lint", "run", "--fix", "--allow-parallel-runners", "--build-tags='!ignore'")
 	if err != nil {
@@ -178,35 +239,18 @@ func LintGo() error {
 	return nil
 }
 
-// Lint runs golangci-lint after markdownlint and init.
-func Lint() { // stave:help=Run linters and auto-fix issues
-	st.Deps(Init, Markdownlint, LintGo)
-}
+// *
+// * Lint namespace
+// *********************************************************************
 
-// Test aggregate target runs Lint and TestGo.
-func Test() error { // stave:help=Run lint and Go tests with coverage
-	// Run Init first (handles setup messages like hooks configured)
-	st.Deps(Init)
+// *********************************************************************
+// * Check namespace
+// *
 
-	// Print test header (unless in quiet/CI mode)
-	if !isQuietMode() {
-		outputln("🧪 Running tests (Test: Lint, TestGo)")
-	}
+type Check st.Namespace
 
-	startTime := time.Now()
-
-	st.Deps(Lint, TestGo)
-
-	// Print success message with timing (unless in quiet/CI mode)
-	if !isQuietMode() {
-		outputf("👌 All tests ran successfully (%s)\n", time.Since(startTime).Round(time.Millisecond))
-	}
-
-	return nil
-}
-
-// ValidateChangelog validates CHANGELOG.md format against 'Keep a Changelog' conventions.
-func ValidateChangelog() error { // stave:help=Validate CHANGELOG.md format
+// Changelog validates CHANGELOG.md format against 'Keep a Changelog' conventions
+func (Check) Changelog() error {
 	if err := changelog.ValidateFile("CHANGELOG.md"); err != nil {
 		return fmt.Errorf("CHANGELOG.md validation failed: %w", err)
 	}
@@ -214,27 +258,8 @@ func ValidateChangelog() error { // stave:help=Validate CHANGELOG.md format
 	return nil
 }
 
-// DumpStdin reads lines from stdin and dumps them until stdin is closed.
-// It uses spew.Dump() for output and returns an error if reading fails.
-func DumpStdin() error {
-	// Read lines from stdin and spew.Dump() them until stdin is closed.
-	scanner := bufio.NewScanner(os.Stdin)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		spew.Dump(line)
-	}
-
-	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("reading from stdin: %w", err)
-	}
-
-	return nil
-}
-
-// PrePushCheck runs all pre-push validations for branch pushes.
-// This is the Go equivalent of the .githooks/pre-push bash script.
-func PrePushCheck(remoteName, _remoteURL string) error { // stave:help=Run pre-push changelog validations
+// PrePush runs pre-push validations including changelog checks
+func (Check) PrePush(remoteName, _remoteURL string) error {
 	pushRefs, err := changelog.ReadPushRefs(os.Stdin)
 	if err != nil {
 		return fmt.Errorf("failed to read push refs: %w", err)
@@ -272,8 +297,40 @@ func PrePushCheck(remoteName, _remoteURL string) error { // stave:help=Run pre-p
 	return nil
 }
 
-// TestGo runs Go tests with coverage and produces coverage.out and coverage.html.
-func TestGo() error { // stave:help=Run Go tests with coverage (coverage.out, coverage.html)
+// *
+// * Check namespace
+// *********************************************************************
+
+// *********************************************************************
+// * Test namespace
+// *
+
+type Test st.Namespace
+
+// All aggregate target runs lint:all and test:go
+func (Test) All() error {
+	// Run Init first (handles setup messages like hooks configured)
+	st.Deps(Init)
+
+	// Print test header (unless in quiet/CI mode)
+	if !isQuietMode() {
+		outputln("🧪 Running tests (test:all: lint:all, test:go)")
+	}
+
+	startTime := time.Now()
+
+	st.Deps(Lint.All, Test.Go)
+
+	// Print success message with timing (unless in quiet/CI mode)
+	if !isQuietMode() {
+		outputf("👌 All tests ran successfully (%s)\n", time.Since(startTime).Round(time.Millisecond))
+	}
+
+	return nil
+}
+
+// Go runs Go tests with coverage and produces coverage.out and coverage.html
+func (Test) Go() error {
 	st.Deps(Init)
 
 	nCoresStr := cmp.Or(os.Getenv("STAVE_NUM_PROCESSORS"), "1")
@@ -294,61 +351,55 @@ func TestGo() error { // stave:help=Run Go tests with coverage (coverage.out, co
 	return sh.Run("go", "tool", "cover", "-html=coverage.out", "-o", "coverage.html")
 }
 
-// Build artifacts via goreleaser snapshot build.
-func Build() error { // stave:help=Build artifacts using goreleaser (snapshot)
-	st.Deps(Init)
+// *
+// * Test namespace
+// *********************************************************************
 
-	nCoresStr := cmp.Or(os.Getenv("STAVE_NUM_PROCESSORS"), "1")
+// *********************************************************************
+// * Debug namespace
+// *
 
-	if err := sh.RunV("goreleaser", "check"); err != nil {
-		return err
-	}
+type Debug st.Namespace
 
-	return sh.RunV("goreleaser", "--parallelism", nCoresStr, "build", "--snapshot", "--clean")
-}
-
-// Release tags the next version and runs goreleaser release.
-func Release() error { // stave:help=Create and push a new tag, then goreleaser
-	if err := setSkipNextVerChangelogCheck(); err != nil {
-		return err
-	}
-
-	st.Deps(Init)
-
-	nextTag, err := changelog.NextTag()
-	if err != nil {
-		return err
-	}
-
-	slog.Info("computed next tag", slog.String("next_tag", nextTag))
-
-	if err := sh.Run("git", "tag", nextTag); err != nil {
-		return err
-	}
-
-	if err := sh.Run("git", "push", "--tags"); err != nil {
-		return err
-	}
-
-	nCoresStr := cmp.Or(os.Getenv("STAVE_NUM_PROCESSORS"), "1")
-
-	return sh.Run("goreleaser", "--parallelism", nCoresStr, "release", "--clean")
-}
-
-func ParallelismCheck() {
+// Parallelism prints parallelism environment variables (debugging utility)
+func (Debug) Parallelism() {
 	outputf("STAVE_NUM_PROCESSORS=%q\n", os.Getenv("STAVE_NUM_PROCESSORS"))
 	outputf("GOMAXPROCS=%q\n", os.Getenv("GOMAXPROCS"))
 }
 
-// setSkipNextVerChangelogCheck sets the STAVEFILE_SKIP_NEXTVER_CHANGELOG_CHECK environment variable.
-func setSkipNextVerChangelogCheck() error {
-	// Set STAVEFILE_SKIP_NEXTVER_CHANGELOG_CHECK env var.
-	return os.Setenv("STAVEFILE_SKIP_NEXTVER_CHANGELOG_CHECK", "1")
+// *
+// * Debug namespace
+// *********************************************************************
+
+// *********************************************************************
+// * utility functions
+// *
+
+// outputf writes a formatted string to stdout.
+// Uses fmt.Fprintf for output (avoids forbidigo which bans fmt.Print* patterns).
+func outputf(format string, args ...interface{}) {
+	_, _ = fmt.Fprintf(os.Stdout, format, args...)
 }
 
-// Clean removes the temporarily generated files from Release.
-func Clean() error {
-	return sh.Rm("dist")
+// outputln writes a string to stdout with a trailing newline.
+func outputln(s string) {
+	_, _ = fmt.Fprintln(os.Stdout, s)
+}
+
+// isQuietMode returns true if output should be suppressed (CI environments).
+// Check STAVE_QUIET=1 first, then common CI environment variables.
+func isQuietMode() bool {
+	if os.Getenv("STAVE_QUIET") == "1" {
+		return true
+	}
+	// Common CI environment variables
+	ciVars := []string{"CI", "GITHUB_ACTIONS", "GITLAB_CI", "JENKINS_URL", "CIRCLECI", "BUILDKITE"}
+	for _, v := range ciVars {
+		if os.Getenv(v) != "" {
+			return true
+		}
+	}
+	return false
 }
 
 func flags() string {
@@ -359,9 +410,9 @@ func flags() string {
 		theTag = "dev"
 	}
 	return fmt.Sprintf(
-		`-X "github.com/preminger/goctx/cmd/goctx/version.BuildDate=%s"`+` `+
-			`-X "github.com/preminger/goctx/cmd/goctx/version.Commit=%s"`+` `+
-			`-X "github.com/preminger/goctx/cmd/goctx/version.Version=%s"`,
+		`-X "github.com/yaklabco/stave/cmd/stave/version.BuildDate=%s"`+` `+
+			`-X "github.com/yaklabco/stave/cmd/stave/version.Commit=%s"`+` `+
+			`-X "github.com/yaklabco/stave/cmd/stave/version.Version=%s"`,
 		timestamp, theHash, theTag,
 	)
 }
@@ -383,3 +434,52 @@ func hash() string {
 
 	return value
 }
+
+// setSkipNextVerChangelogCheck sets the STAVEFILE_SKIP_NEXTVER_CHANGELOG_CHECK environment variable.
+func setSkipNextVerChangelogCheck() error {
+	// Set STAVEFILE_SKIP_NEXTVER_CHANGELOG_CHECK env var.
+	return os.Setenv("STAVEFILE_SKIP_NEXTVER_CHANGELOG_CHECK", "1")
+}
+
+// hookSystem represents the active git hook system.
+// findStaveHooks returns a list of hook names configured in stave.yaml.
+func findStaveHooks() []string {
+	cfg, err := config.Load(nil)
+	if err != nil || cfg.Hooks == nil {
+		return nil
+	}
+	return cfg.Hooks.HookNames()
+}
+
+// ensureStaveYAML creates stave.yaml with default hooks config if it doesn't exist.
+func ensureStaveYAML() error {
+	const staveYAML = "stave.yaml"
+
+	// Check if file exists
+	if _, err := os.Stat(staveYAML); err == nil {
+		return nil
+	}
+
+	// Create default config
+	const defaultConfig = `# Stave configuration
+# See: https://github.com/yaklabco/stave
+
+# Use hash_fast for faster hook execution (skips GOCACHE check)
+hash_fast: true
+
+# Git hooks configuration
+hooks:
+  pre-push:
+    - target: Test
+`
+	const configFilePerm = 0o600
+	if err := os.WriteFile(staveYAML, []byte(defaultConfig), configFilePerm); err != nil {
+		return fmt.Errorf("failed to create stave.yaml: %w", err)
+	}
+
+	return nil
+}
+
+// *
+// * utility functions
+// *********************************************************************

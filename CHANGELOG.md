@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.2] - 2025-12-16
+
+### Changed
+
+- Adapted latest stavefile.go from `stave` project (`v0.3.4`)
+
+- Renamed `test` job in checks.yml to `checks`.
+
+- Excluded `godot` linter from stavefile linting.
+
+- Bumped `stave` to `v0.3.4`.
+
+### Removed
+
+- Extra printing of errors in main.go (`ExecuteWithFang(...)` already pretty-prints error; eliminates duplicate error printing).
+
 ## [0.16.1] - 2025-12-11
 
 ### Changed
@@ -368,7 +384,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.16.1...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.16.2...HEAD
+[0.16.2]: https://github.com/preminger/goctx/compare/v0.16.1...v0.16.2
 [0.16.1]: https://github.com/preminger/goctx/compare/v0.16.0...v0.16.1
 [0.16.0]: https://github.com/preminger/goctx/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/preminger/goctx/compare/v0.14.7...v0.15.0
