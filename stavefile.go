@@ -393,6 +393,22 @@ func (Test) Go() error {
 // *********************************************************************
 
 // *********************************************************************
+// * Debug namespace
+// *
+
+type Debug st.Namespace
+
+// Parallelism prints parallelism environment variables (debugging utility)
+func (Debug) Parallelism() {
+	outputf("STAVE_NUM_PROCESSORS=%q\n", os.Getenv("STAVE_NUM_PROCESSORS"))
+	outputf("GOMAXPROCS=%q\n", os.Getenv("GOMAXPROCS"))
+}
+
+// *
+// * Debug namespace
+// *********************************************************************
+
+// *********************************************************************
 // * utility functions
 // *
 
