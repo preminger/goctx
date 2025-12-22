@@ -1,5 +1,8 @@
 //go:build stave
 
+// This is the build script for Stave. The install target is all you really need.
+// The release target is for generating official releases and is really only
+// useful to project admins.
 package main
 
 import (
@@ -31,6 +34,18 @@ func init() {
 		logHandler.SetLevel(log.DebugLevel)
 	}
 }
+
+// *********************************************************************
+// * Aliases maps target aliases to their implementations.
+// * (This is a stave convention - stavefiles define this global to create target aliases.)
+// *
+
+var Aliases = map[string]any{
+	"LCL": Prep.LinkifyChangelog,
+}
+
+// *
+// *********************************************************************
 
 // *********************************************************************
 // * Default target
@@ -102,10 +117,7 @@ func Release() error {
 
 // Clean removes the dist directory created by goreleaser
 func Clean() error {
-	return errors.Join(
-		sh.Rm("dist"),
-		sh.Rm(filepath.Join("app", "goctx", "dist")),
-	)
+	return sh.Rm("dist")
 }
 
 // *
@@ -236,6 +248,8 @@ func (Lint) Go() error {
 		return err
 	}
 
+	slog.Debug("golangci-lint completed successfully")
+
 	return nil
 }
 
@@ -254,7 +268,9 @@ func (Check) Changelog() error {
 	if err := changelog.ValidateFile("CHANGELOG.md"); err != nil {
 		return fmt.Errorf("CHANGELOG.md validation failed: %w", err)
 	}
+
 	slog.Info("CHANGELOG.md validation passed")
+
 	return nil
 }
 
@@ -299,6 +315,27 @@ func (Check) PrePush(remoteName, _remoteURL string) error {
 
 // *
 // * Check namespace
+// *********************************************************************
+
+// *********************************************************************
+// * Prep namespace
+// *
+
+type Prep st.Namespace
+
+// LinkifyChangelog ensures that heading links in changelog have Link Reference Definitions
+func (Prep) LinkifyChangelog() error {
+	if err := changelog.Linkify("CHANGELOG.md"); err != nil {
+		return fmt.Errorf("CHANGELOG.md linkification failed: %w", err)
+	}
+
+	slog.Info("CHANGELOG.md linkification complete")
+
+	return nil
+}
+
+// *
+// * Prep namespace
 // *********************************************************************
 
 // *********************************************************************
@@ -377,7 +414,7 @@ func (Debug) Parallelism() {
 
 // outputf writes a formatted string to stdout.
 // Uses fmt.Fprintf for output (avoids forbidigo which bans fmt.Print* patterns).
-func outputf(format string, args ...interface{}) {
+func outputf(format string, args ...any) {
 	_, _ = fmt.Fprintf(os.Stdout, format, args...)
 }
 
