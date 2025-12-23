@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.2] - 2025-12-23
+
+### Removed
+
+- Reference to (non-existent) `NOTICE` file in .goreleaser.yaml
+
+## [0.17.1] - 2025-12-23
+
+### Changed
+
+- Adaptations to new .goreleaser.yaml re-adopted from `stave` project (`v0.6.1`).
+
 ## [0.17.0] - 2025-12-23
 
 ### Changed
@@ -412,7 +424,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.17.0...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.17.2...HEAD
+[0.17.2]: https://github.com/preminger/goctx/compare/v0.17.1...v0.17.2
+[0.17.1]: https://github.com/preminger/goctx/compare/v0.17.0...v0.17.1
 [0.17.0]: https://github.com/preminger/goctx/compare/v0.16.4...v0.17.0
 [0.16.4]: https://github.com/preminger/goctx/compare/v0.16.3...v0.16.4
 [0.16.3]: https://github.com/preminger/goctx/compare/v0.16.2...v0.16.3
