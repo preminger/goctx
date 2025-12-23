@@ -50,15 +50,6 @@ checksum:
 snapshot:
   version_template: "{{ .Tag }}-dev"
 
-changelog:
-  sort: asc
-  filters:
-    exclude:
-      # Adjusted filter to ensure consistency (included the colon for 'test')
-      - '^docs:'
-      - '^chore:'
-      - '^test:'
-
 homebrew_casks:
   - name: goctx
     ids:
