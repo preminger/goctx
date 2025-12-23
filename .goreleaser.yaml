@@ -12,6 +12,12 @@ before:
   hooks:
     # Keep modules tidy before building artifacts
     - go mod tidy
+    # Generate completions into a hidden cache folder.
+    # This avoids the 'dist' cleanup and prevents parallel race conditions.
+    - mkdir -p .buildcache/completions
+    - sh -c "go run ./app/goctx completion bash > .buildcache/completions/goctx.bash"
+    - sh -c "go run ./app/goctx completion zsh > .buildcache/completions/goctx.zsh"
+    - sh -c "go run ./app/goctx completion fish > .buildcache/completions/goctx.fish"
 
 builds:
   - id: goctx
@@ -20,29 +26,38 @@ builds:
     flags:
       - -trimpath
     ldflags:
-      # Keep it minimal and safe; no package vars assumed.
       - -s -w
       # Inject version metadata so the binary can print it without shelling out.
-      - -X github.com/preminger/goctx/cmd/goctx.Version={{ .Version }}
-      - -X github.com/preminger/goctx/cmd/goctx.Commit={{ .FullCommit }}
-      - -X github.com/preminger/goctx/cmd/goctx.BuildDate={{ .Date }}
+      - -X github.com/preminger/goctx/cmd/goctx/version.Version={{ .Version }}
+      - -X github.com/preminger/goctx/cmd/goctx/version.Commit={{ .FullCommit }}
+      - -X github.com/preminger/goctx/cmd/goctx/version.BuildDate={{ .Date }}
     goos:
-      - linux
       - darwin
+      - linux
       - windows
+      - freebsd
+      - netbsd
+      - openbsd
+      - dragonfly
     goarch:
       - amd64
+      - arm
       - arm64
-    # Optionally exclude unsupported combos here
-    # ignore:
-    #   - goos: darwin
-    #     goarch: 386
+    ignore:
+      - { goos: openbsd, goarch: arm, goarm: 6 }
+      - { goos: windows, goarch: arm, goarm: 6 }
 
 archives:
   - id: default
-    ids:
-      - goctx
+    ids: [goctx]
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - NOTICE
+      # Map the completions from our cache into a 'completions' folder in the archive
+      - src: .buildcache/completions/*
+        dst: completions
+        strip_parent: true
 
 checksum:
   name_template: "checksums.txt"
@@ -50,19 +65,8 @@ checksum:
 snapshot:
   version_template: "{{ .Tag }}-dev"
 
-changelog:
-  sort: asc
-  filters:
-    exclude:
-      # Adjusted filter to ensure consistency (included the colon for 'test')
-      - '^docs:'
-      - '^chore:'
-      - '^test:'
-
-homebrew_casks:
+brews:
   - name: goctx
-    ids:
-      - default
     repository:
       owner: preminger
       name: homebrew-tap
@@ -71,11 +75,30 @@ homebrew_casks:
       name: Omer Preminger
       email: omer@preminger.xyz
     homepage: "https://github.com/preminger/goctx"
-    description: "Command-line Go utility that automatically adds missing 'plumbing' for `context.Context` parameters along the call-graph leading to a given function."
-    license: "Apache 2.0"
-    # GoReleaser automatically generates the appropriate test block for the Cask.
+    description: "Make(file) replacement that is pure Go based (a fork of `makefile/mage`)."
+    license: "Apache-2.0"
+
+    # Installation logic for the binary and completions
+    # We point to the 'completions' folder created in the archive step above
+    install: |
+      bin.install "goctx"
+      bash_completion.install "completions/goctx.bash" => "goctx"
+      zsh_completion.install "completions/goctx.zsh" => "_goctx"
+      fish_completion.install "completions/goctx.fish"
+
+    # Useful information displayed after 'brew install'
+    caveats: |
+      To enable completions, you may need to add the following to your shell profile, and then open a new shell:
+        zsh:
+          autoload -U compinit && compinit
+        bash:
+          [[ -r "$(brew --prefix)/etc/profile.d/bash_completion.sh" ]] && . "$(brew --prefix)/etc/profile.d/bash_completion.sh"
+
+    test: |
+      system "#{bin}/goctx --version"
 
 release:
-  # By default, GoReleaser infers GitHub/GitLab repo from the git remote.
-  # This section can be extended if needed (e.g., to set draft, discussion category, etc.).
   draft: false
+  github:
+    owner: preminger
+    name: goctx
