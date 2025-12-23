@@ -7,7 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.16.4] - 2025-12-16
+## [0.17.0] - 2025-12-23
+
+### Changed
+
+- Use `stave` version `0.6.x`'s [*Keep a Changelog*](https://keepachangelog.com/en/1.1.0/)-based release notes functionality.
+
+- Ship to Homebrew as a formula rather than a cask, and ship with completions support.
+
+## [0.16.4] - 2025-12-22
 
 ### Added
 
@@ -17,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Bumped `stave` to `v0.5.4`.
 
-## [0.16.3] - 2025-12-16
+## [0.16.3] - 2025-12-22
 
 ### Added
 
