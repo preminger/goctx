@@ -74,7 +74,7 @@ brews:
       name: Omer Preminger
       email: omer@preminger.xyz
     homepage: "https://github.com/preminger/goctx"
-    description: "Make(file) replacement that is pure Go based (a fork of `makefile/mage`)."
+    description: "Command-line Go utility that automatically adds missing 'plumbing' for `context.Context` parameters along the call-graph leading to a given function."
     license: "Apache-2.0"
 
     # Installation logic for the binary and completions
