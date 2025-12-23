@@ -53,7 +53,6 @@ archives:
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     files:
       - LICENSE
-      - NOTICE
       # Map the completions from our cache into a 'completions' folder in the archive
       - src: .buildcache/completions/*
         dst: completions
