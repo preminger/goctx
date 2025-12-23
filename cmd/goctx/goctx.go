@@ -7,6 +7,7 @@ import (
 
 	"github.com/charmbracelet/fang"
 	"github.com/charmbracelet/log"
+	"github.com/preminger/goctx/cmd/goctx/version"
 	"github.com/preminger/goctx/pkg/goctx"
 	"github.com/spf13/cobra"
 )
@@ -36,7 +37,7 @@ resolution is ambiguous and the tool will ask you to disambiguate by line number
 
   NOTE: goctx will not work unless you have a 'go.mod' file.
   That's because it uses Go internals to parse your code into packages!`,
-		Version: OverallVersionStringColorized(ctx),
+		Version: version.OverallVersionStringColorized(ctx),
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			logHandler := log.NewWithOptions(
