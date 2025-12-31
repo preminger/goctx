@@ -422,6 +422,7 @@ linters:
           - forbidigo
           - gochecknoglobals
           - godot
+          - unparam
           - wrapcheck
         path: stavefile\.go$
     paths:
