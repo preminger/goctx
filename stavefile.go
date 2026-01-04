@@ -207,6 +207,7 @@ func (Setup) Hooks() error {
 
 type Lint st.Namespace
 
+// Default equivalent to lint:all
 func (Lint) Default() error {
 	st.Deps(Lint.All)
 
@@ -391,6 +392,7 @@ func (Prep) BuildCacheDir() error {
 
 type Test st.Namespace
 
+// Default equivalent to test:all
 func (Test) Default() error {
 	st.Deps(Test.All)
 
