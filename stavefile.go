@@ -1,8 +1,6 @@
 //go:build stave
 
-// This is the build script for Stave. The install target is all you really need.
-// The release target is for generating official releases and is really only
-// useful to project admins.
+// This is the build script for goctx.
 package main
 
 import (

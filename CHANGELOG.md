@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.9] - 2026-01-04
+
+### Fixed
+
+- Package description in stavefile.go
+
 ## [0.17.8] - 2026-01-03
 
 ### Changed
@@ -460,7 +466,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.17.8...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.17.9...HEAD
+[0.17.9]: https://github.com/preminger/goctx/compare/v0.17.8...v0.17.9
 [0.17.8]: https://github.com/preminger/goctx/compare/v0.17.7...v0.17.8
 [0.17.7]: https://github.com/preminger/goctx/compare/v0.17.6...v0.17.7
 [0.17.6]: https://github.com/preminger/goctx/compare/v0.17.5...v0.17.6
