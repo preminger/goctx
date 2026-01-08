@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.11] - 2026-01-08
+
+### Changed
+
+- "Double-dip" running of `golangci-lint` in stavefile.go: run once with `--fix` & without reporting exit code, then run a second time without `--fix` & report exit code as well as any output.
+
+- Bumped `stave` to `v0.9.5`.
+
 ## [0.17.10] - 2026-01-07
 
 ### Changed
@@ -472,7 +480,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.17.10...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.17.11...HEAD
+[0.17.11]: https://github.com/preminger/goctx/compare/v0.17.10...v0.17.11
 [0.17.10]: https://github.com/preminger/goctx/compare/v0.17.9...v0.17.10
 [0.17.9]: https://github.com/preminger/goctx/compare/v0.17.8...v0.17.9
 [0.17.8]: https://github.com/preminger/goctx/compare/v0.17.7...v0.17.8
