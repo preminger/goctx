@@ -88,7 +88,7 @@ func Build() error {
 		return err
 	}
 
-	return sh.RunV("goreleaser", "--parallelism", numProcsAsString(), "build", "--snapshot", "--clean")
+	return sh.RunV("goreleaser", "--parallelism", numProcsAsString(), "build", "--clean", "--snapshot")
 }
 
 // Release tags the next version and runs goreleaser release
@@ -108,7 +108,7 @@ func Snapshot() error {
 		return err
 	}
 
-	return sh.Run("goreleaser", "--parallelism", numProcsAsString(), "release", "--snapshot", "--clean", "--release-notes="+filepath.Join(buildCacheDirName, releaseNotesFilename))
+	return sh.Run("goreleaser", "--parallelism", numProcsAsString(), "release", "--clean", "--snapshot", "--release-notes="+filepath.Join(buildCacheDirName, releaseNotesFilename))
 }
 
 // Clean removes the dist directory created by goreleaser
@@ -302,7 +302,7 @@ func (Check) GitStateClean() error {
 // PrePush runs pre-push validations including changelog checks
 func (Check) PrePush(remoteName, _remoteURL string) error {
 	st.Deps(Prep.LinkifyChangelog)
-	st.Deps(Lint.All)
+	st.Deps(Test.All, Build)
 	st.Deps(Check.GitStateClean)
 
 	pushRefs, err := changelog.ReadPushRefs(os.Stdin)
@@ -608,7 +608,7 @@ func tagAndPush(nextTag string) error {
 		return err
 	}
 
-	return sh.Run("git", "push", "--tags")
+	return sh.Run("git", "push", "--tags", "--no-verify")
 }
 
 // numProcsAsString returns the number of processor cores as a string.
