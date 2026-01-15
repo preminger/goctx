@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.13] - 2026-01-15
+
+### Changed
+
+- Various tweaks to stavefile.go and stave.yaml pre-push hooks.
+
+- Bumped `stave` to `v0.9.8`.
+
 ## [0.17.12] - 2026-01-08
 
 ### Changed
@@ -486,7 +494,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.17.12...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.17.13...HEAD
+[0.17.13]: https://github.com/preminger/goctx/compare/v0.17.12...v0.17.13
 [0.17.12]: https://github.com/preminger/goctx/compare/v0.17.11...v0.17.12
 [0.17.11]: https://github.com/preminger/goctx/compare/v0.17.10...v0.17.11
 [0.17.10]: https://github.com/preminger/goctx/compare/v0.17.9...v0.17.10
