@@ -53,22 +53,22 @@ resolution is ambiguous and the tool will ask you to disambiguate by line number
 
 			slog.Debug("logger initialized")
 
-			stopAt, err := cmd.Flags().GetString(OptNameStopAt)
+			stopAt, err := cmd.Root().Flags().GetString(OptNameStopAt)
 			if err != nil {
 				return fmt.Errorf("parsing stop-at: %w", err)
 			}
 
-			tags, err := cmd.Flags().GetString(OptNameTags)
+			tags, err := cmd.Root().Flags().GetString(OptNameTags)
 			if err != nil {
 				return fmt.Errorf("parsing tags: %w", err)
 			}
 
-			httpMode, err := cmd.Flags().GetBool(OptNameHTTP)
+			httpMode, err := cmd.Root().Flags().GetBool(OptNameHTTP)
 			if err != nil {
 				return fmt.Errorf("parsing html: %w", err)
 			}
 
-			verbose, err := cmd.PersistentFlags().GetBool(OptNameVerbose)
+			verbose, err := cmd.Root().PersistentFlags().GetBool(OptNameVerbose)
 			if err != nil {
 				return fmt.Errorf("parsing verbose: %w", err)
 			}
