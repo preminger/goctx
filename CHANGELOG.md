@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.16] - 2026-01-28
+
+### Fixed
+
+- Reference to root-command flags in `spf13/cobra` usage.
+
 ## [0.17.15] - 2026-01-16
 
 ### Changed
@@ -506,7 +512,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.17.15...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.17.16...HEAD
+[0.17.16]: https://github.com/preminger/goctx/compare/v0.17.15...v0.17.16
 [0.17.15]: https://github.com/preminger/goctx/compare/v0.17.14...v0.17.15
 [0.17.14]: https://github.com/preminger/goctx/compare/v0.17.13...v0.17.14
 [0.17.13]: https://github.com/preminger/goctx/compare/v0.17.12...v0.17.13
