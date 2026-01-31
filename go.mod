@@ -10,7 +10,7 @@ require (
 	github.com/sebdah/goldie/v2 v2.8.0
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
-	github.com/yaklabco/stave v0.10.3
+	github.com/yaklabco/stave v0.10.5
 	golang.org/x/tools v0.41.0
 )
 
@@ -33,7 +33,6 @@ require (
 	github.com/clipperhouse/stringish v0.1.1 // indirect
 	github.com/clipperhouse/uax29/v2 v2.4.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/direnv/direnv/v2 v2.37.1 // indirect
 	github.com/dnephin/pflag v1.0.7 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
@@ -64,7 +63,7 @@ require (
 	github.com/spf13/viper v1.21.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
-	github.com/yaklabco/direnv/v2 v2.37.2-0.20260103155829-e362a6bcef30 // indirect
+	github.com/yaklabco/direnv/v2 v2.37.2-0.20260131191105-7a83bbbd7e5b // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/exp v0.0.0-20260112195511-716be5621a96 // indirect
 	golang.org/x/mod v0.32.0 // indirect

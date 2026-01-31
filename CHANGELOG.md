@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.17] - 2026-01-31
+
+### Changed
+
+- Bumped `stave` to `v0.10.5`.
+
 ## [0.17.16] - 2026-01-28
 
 ### Fixed
@@ -512,7 +518,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.17.16...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.17.17...HEAD
+[0.17.17]: https://github.com/preminger/goctx/compare/v0.17.16...v0.17.17
 [0.17.16]: https://github.com/preminger/goctx/compare/v0.17.15...v0.17.16
 [0.17.15]: https://github.com/preminger/goctx/compare/v0.17.14...v0.17.15
 [0.17.14]: https://github.com/preminger/goctx/compare/v0.17.13...v0.17.14
