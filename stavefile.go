@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bytes"
 	"cmp"
 	"errors"
 	"fmt"
@@ -300,10 +301,51 @@ func (Check) GitStateClean() error {
 	return nil
 }
 
+// Secrets scans the repository for secrets using trufflehog.
+func (Check) Secrets() error {
+	st.Deps(Prereq.Brew)
+
+	slog.Info("Scanning for secrets using trufflehog...")
+	repoRoot, err := sh.Output("git", "rev-parse", "--show-toplevel")
+	if err != nil {
+		return fmt.Errorf("failed to determine repository root: %w", err)
+	}
+
+	repoRoot, err = filepath.Abs(strings.TrimSpace(repoRoot))
+	if err != nil {
+		return fmt.Errorf("failed to get absolute path for repository root: %w", err)
+	}
+
+	var stdoutBuf bytes.Buffer
+	var stderrBuf bytes.Buffer
+
+	err = sh.Piper(
+		nil, &stdoutBuf, &stderrBuf,
+		"trufflehog", "git",
+		"--no-update", "--no-verification",
+		"file://"+repoRoot,
+	)
+	if err != nil {
+		titleStyle, blockStyle := ui.GetBlockStyles()
+		outputln(titleStyle.Render("trufflehog stdout:"))
+		outputln(blockStyle.Render(stdoutBuf.String()))
+		outputln("")
+		outputln(titleStyle.Render("trufflehog stderr:"))
+		outputln(blockStyle.Render(stderrBuf.String()))
+		outputln("")
+		return err
+	}
+
+	slog.Info("No secrets found.")
+
+	return nil
+}
+
 // PrePush runs pre-push validations including changelog checks
 func (Check) PrePush(remoteName, _remoteURL string) error {
 	st.Deps(Prep.LinkifyChangelog)
 	st.Deps(Test.All, Build)
+	st.Deps(Check.Secrets)
 	st.Deps(Check.GitStateClean)
 
 	pushRefs, err := changelog.ReadPushRefs(os.Stdin)

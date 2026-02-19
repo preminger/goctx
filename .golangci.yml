@@ -410,6 +410,9 @@ linters:
           - gocritic
         source: //noinspection
       - linters:
+          - revive
+        text: "var-naming: avoid package names that conflict with Go standard library"
+      - linters:
           - bodyclose
           - dupl
           - funlen
