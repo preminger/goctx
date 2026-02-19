@@ -7,11 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.18] - 2026-02-18
+
+### Added
+
+- Secrets scanning (based on [trufflehog](https://github.com/trufflesecurity/trufflehog) GitHub action) in CI.
+
+- Wire in [trufflehog](https://github.com/trufflesecurity/trufflehog) to project's stavefile.gp
+
+### Changed
+
+- Bump `stave` to `v0.10.8`.
+
+- Bump all updatable Go dependencies to their latest versions as of this date.
+
 ## [0.17.17] - 2026-01-31
 
 ### Changed
 
-- Bumped `stave` to `v0.10.5`.
+- Bump `stave` to `v0.10.5`.
 
 ## [0.17.16] - 2026-01-28
 
@@ -23,7 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Bumped `stave` to `v0.9.10`.
+- Bump `stave` to `v0.9.10`.
 
 ## [0.17.14] - 2026-01-16
 
@@ -37,13 +51,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Various tweaks to stavefile.go and stave.yaml pre-push hooks.
 
-- Bumped `stave` to `v0.9.8`.
+- Bump `stave` to `v0.9.8`.
 
 ## [0.17.12] - 2026-01-08
 
 ### Changed
 
-- Bumped `stave` to `v0.9.6`.
+- Bump `stave` to `v0.9.6`.
 
 ## [0.17.11] - 2026-01-08
 
@@ -51,13 +65,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - "Double-dip" running of `golangci-lint` in stavefile.go: run once with `--fix` & without reporting exit code, then run a second time without `--fix` & report exit code as well as any output.
 
-- Bumped `stave` to `v0.9.5`.
+- Bump `stave` to `v0.9.5`.
 
 ## [0.17.10] - 2026-01-07
 
 ### Changed
 
-- Bumped `stave` to `v0.9.4`.
+- Bump `stave` to `v0.9.4`.
 
 ## [0.17.9] - 2026-01-04
 
@@ -69,25 +83,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Bumped `stave` to `v0.8.3`.
+- Bump `stave` to `v0.8.3`.
 
 ## [0.17.7] - 2026-01-02
 
 ### Changed
 
-- Bumped `stave` to `v0.8.1`.
+- Bump `stave` to `v0.8.1`.
 
 ## [0.17.6] - 2025-12-31
 
 ### Changed
 
-- Bumped `stave` to `v0.7.0`, and introduced newly-supported `Default` targets in stavefile namespaces.
+- Bump `stave` to `v0.7.0`, and introduced newly-supported `Default` targets in stavefile namespaces.
 
 ## [0.17.5] - 2025-12-25
 
 ### Changed
 
-- Bumped `stave` to `v0.6.6`.
+- Bump `stave` to `v0.6.6`.
 
 ## [0.17.4] - 2025-12-23
 
@@ -129,7 +143,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Bumped `stave` to `v0.5.4`.
+- Bump `stave` to `v0.5.4`.
 
 ## [0.16.3] - 2025-12-22
 
@@ -139,7 +153,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Bumped `stave` to `v0.5.2`.
+- Bump `stave` to `v0.5.2`.
 
 ## [0.16.2] - 2025-12-16
 
@@ -151,7 +165,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Excluded `godot` linter from stavefile linting.
 
-- Bumped `stave` to `v0.3.4`.
+- Bump `stave` to `v0.3.4`.
 
 ### Removed
 
@@ -518,7 +532,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.17.17...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.17.18...HEAD
+[0.17.18]: https://github.com/preminger/goctx/compare/v0.17.17...v0.17.18
 [0.17.17]: https://github.com/preminger/goctx/compare/v0.17.16...v0.17.17
 [0.17.16]: https://github.com/preminger/goctx/compare/v0.17.15...v0.17.16
 [0.17.15]: https://github.com/preminger/goctx/compare/v0.17.14...v0.17.15
