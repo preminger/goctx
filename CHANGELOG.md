@@ -7,7 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.17.18] - 2026-02-18
+## [0.17.19] - 2026-02-19
+
+### Changed
+
+- Change pre-push [trufflehog](https://github.com/trufflesecurity/trufflehog) hook to only scan *changes*, rather than entire repo.
+
+- Bump `stave` to `v0.10.10`.
+
+## [0.17.18] - 2026-02-19
 
 ### Added
 
@@ -532,7 +540,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.17.18...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.17.19...HEAD
+[0.17.19]: https://github.com/preminger/goctx/compare/v0.17.18...v0.17.19
 [0.17.18]: https://github.com/preminger/goctx/compare/v0.17.17...v0.17.18
 [0.17.17]: https://github.com/preminger/goctx/compare/v0.17.16...v0.17.17
 [0.17.16]: https://github.com/preminger/goctx/compare/v0.17.15...v0.17.16
