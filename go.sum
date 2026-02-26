@@ -26,8 +26,8 @@ github.com/charmbracelet/x/ansi v0.11.6 h1:GhV21SiDz/45W9AnV2R61xZMRri5NlLnl6CVF
 github.com/charmbracelet/x/ansi v0.11.6/go.mod h1:2JNYLgQUsyqaiLovhU2Rv/pb8r6ydXKS3NIttu3VGZQ=
 github.com/charmbracelet/x/cellbuf v0.0.15 h1:ur3pZy0o6z/R7EylET877CBxaiE1Sp1GMxoFPAIztPI=
 github.com/charmbracelet/x/cellbuf v0.0.15/go.mod h1:J1YVbR7MUuEGIFPCaaZ96KDl5NoS0DAWkskup+mOY+Q=
-github.com/charmbracelet/x/exp/charmtone v0.0.0-20260223200540-d6a276319c45 h1:t/EWU3ZOrVxmr2d19f+1wnWr92p1O82oOTm7ASxodsA=
-github.com/charmbracelet/x/exp/charmtone v0.0.0-20260223200540-d6a276319c45/go.mod h1:nsExn0DGyX0lh9LwLHTn2Gg+hafdzfSXnC+QmEJTZFY=
+github.com/charmbracelet/x/exp/charmtone v0.0.0-20260225200202-61df8bc4b903 h1:QKMgigHt5QxrmLPYiy2rqeupaUk3LwKwJCBVr52KPTI=
+github.com/charmbracelet/x/exp/charmtone v0.0.0-20260225200202-61df8bc4b903/go.mod h1:nsExn0DGyX0lh9LwLHTn2Gg+hafdzfSXnC+QmEJTZFY=
 github.com/charmbracelet/x/exp/golden v0.0.0-20250806222409-83e3a29d542f h1:pk6gmGpCE7F3FcjaOEKYriCvpmIN4+6OS/RD0vm4uIA=
 github.com/charmbracelet/x/exp/golden v0.0.0-20250806222409-83e3a29d542f/go.mod h1:IfZAMTHB6XkZSeXUqriemErjAWCCzT0LwjKFYCZyw0I=
 github.com/charmbracelet/x/term v0.2.2 h1:xVRT/S2ZcKdhhOuSP4t5cLi5o+JxklsoEObBSgfgZRk=
@@ -141,8 +141,8 @@ github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e h1:JVG44RsyaB9T2KIHavM
 github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e/go.mod h1:RbqR21r5mrJuqunuUZ/Dhy/avygyECGrLceyNeo4LiM=
 github.com/yaklabco/direnv/v2 v2.37.2-0.20260131191105-7a83bbbd7e5b h1:DAGTktrKtMtI/Z/vX2xJSrgjrNWHMu0sI0nVWGfT85w=
 github.com/yaklabco/direnv/v2 v2.37.2-0.20260131191105-7a83bbbd7e5b/go.mod h1:XvQ4lXGMtZs62DxYRUM1a5Zu5hoD4Er8sHsMEgi3yhw=
-github.com/yaklabco/stave v0.11.1 h1:Y9MQyFt5m0S2uwWtHZ6W4R2/oQcb5TGOA9tY1h776s4=
-github.com/yaklabco/stave v0.11.1/go.mod h1:Z3GAl84yG2iOngq0uop0k1ud6MX4gVZvwgl6acgOADY=
+github.com/yaklabco/stave v0.12.0 h1:omJMZC9PzD6ZCowRcD9NWANiWlWO9Fetkc3XQ4ANT40=
+github.com/yaklabco/stave v0.12.0/go.mod h1:6SrOpn+ucj1d2Z3hK3wXyRNsL7TvHfp1BaTA0iGGoWY=
 go.yaml.in/yaml/v3 v3.0.4 h1:tfq32ie2Jv2UxXFdLJdh3jXuOzWiL1fo0bu/FbuKpbc=
 go.yaml.in/yaml/v3 v3.0.4/go.mod h1:DhzuOOF2ATzADvBadXxruRBLzYTpT36CKvDb3+aBEFg=
 golang.org/x/exp v0.0.0-20260218203240-3dfff04db8fa h1:Zt3DZoOFFYkKhDT3v7Lm9FDMEV06GpzjG2jrqW+QTE0=
