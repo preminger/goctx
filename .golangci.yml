@@ -433,6 +433,7 @@ linters:
       - builtin$
       - examples$
       - ^pkg/goctx/testdata($|/)
+      - stave_output_file.*\.go$
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
