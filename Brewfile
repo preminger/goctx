@@ -12,4 +12,6 @@ brew "golangci-lint-langserver"
 brew "goreleaser"
 brew "trufflehog"
 
+brew "markdownlint-cli2"
+
 go "github.com/yaklabco/stave"
