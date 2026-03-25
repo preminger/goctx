@@ -125,6 +125,14 @@ If you are looking for the CHANGELOG for the project, it can be found [here](./C
 
 You can install the CLI via Homebrew, with `go install`, or build from source.
 
+### Latest version using `go install`
+
+```shell
+go install github.com/preminger/goctx/app/goctx@latest
+```
+
+This will install a `goctx` binary in your `GOBIN` (or `$GOPATH/bin`).
+
 ### Homebrew (recommended for macOS/Linux)
 
 - Option A: tap once, then install/update normally
@@ -141,14 +149,6 @@ brew upgrade goctx
 ```shell
 brew install preminger/tap/goctx
 ```
-
-### Latest version using `go install`
-
-```shell
-go install github.com/preminger/goctx/app/goctx@latest
-```
-
-This will install a `goctx` binary in your `GOBIN` (or `$GOPATH/bin`).
 
 ### Build from source (requires Go and optionally goreleaser)
 
