@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.25] - 2026-03-24
+
+### Changed
+
+- Bump `stave` to `v0.13.5`.
+- Bump all updatable Go dependencies to their latest versions as of this date.
+
 ## [0.17.24] - 2026-03-07
 
 ### Changed
@@ -42,7 +49,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Change pre-push [trufflehog](https://github.com/trufflesecurity/trufflehog) hook to only scan *changes*, rather than entire repo.
-
 - Bump `stave` to `v0.10.10`.
 
 ## [0.17.18] - 2026-02-19
@@ -50,13 +56,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Secrets scanning (based on [trufflehog](https://github.com/trufflesecurity/trufflehog) GitHub action) in CI.
-
 - Wire in [trufflehog](https://github.com/trufflesecurity/trufflehog) to project's stavefile.gp
 
 ### Changed
 
 - Bump `stave` to `v0.10.8`.
-
 - Bump all updatable Go dependencies to their latest versions as of this date.
 
 ## [0.17.17] - 2026-01-31
@@ -88,7 +92,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Various tweaks to stavefile.go and stave.yaml pre-push hooks.
-
 - Bump `stave` to `v0.9.8`.
 
 ## [0.17.12] - 2026-01-08
@@ -102,7 +105,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - "Double-dip" running of `golangci-lint` in stavefile.go: run once with `--fix` & without reporting exit code, then run a second time without `--fix` & report exit code as well as any output.
-
 - Bump `stave` to `v0.9.5`.
 
 ## [0.17.10] - 2026-01-07
@@ -170,7 +172,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Use `stave` version `0.6.x`'s [*Keep a Changelog*](https://keepachangelog.com/en/1.1.0/)-based release notes functionality.
-
 - Ship to Homebrew as a formula rather than a cask, and ship with completions support.
 
 ## [0.16.4] - 2025-12-22
@@ -197,12 +198,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Adapted latest stavefile.go from `stave` project (`v0.3.4`)
-
+- Adapted latest stavefile.go from `stave` project (`v0.3.4`).
 - Renamed `test` job in checks.yml to `checks`.
-
 - Excluded `godot` linter from stavefile linting.
-
 - Bump `stave` to `v0.3.4`.
 
 ### Removed
@@ -214,7 +212,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Bump Go version to `1.25.5`.
-
 - Bumped all updatable Go dependencies as of this date.
 
 ## [0.16.0] - 2025-12-10
@@ -222,7 +219,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Move from [Mage](https://magefile.org/) to [Stave](https://github.com/yaklabco/stave) as build tool.
-
 - Change `release.yml` workflow triggering to manual-only.
 
 ## [0.15.0] - 2025-12-09
@@ -294,11 +290,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - When you are in a subdir *below* where the `go.mod` is, and you run `goctx` with a TARGET argument that specifies a function in a source file in the current dir - but that function is called elsewhere in the module *outside* of this subdir - the app now adjusts all the relevant call sites within the module, not just the ones in the current subdir.
-
 - Both functions defined in `*_test.go` files, and callsites contained in `*_test.go` files (even in cases where no signatures of functions defined in `*_test.go` were changed), are now correctly handled.
-
 - App now correctly distinguishes between `MyFunc()`, `xyz.MyFunc()` (where `xyz` is a package name), `a.MyFunc()` (where `a` is an object of type `TypeA`), and `b.MyFunc()` (where `b` is an object of type `TypeB`). Changes to the function signature of one of these will not affect call sites where the others are called.
-
 - When a function `MyFunc` contains calls to two functions `MyOtherFunc1` and `MyOtherFunc2`, and a context argument has been added to both `MyOtherFunc1` and `MyOtherFunc2`, only one context argument will be added to `MyFunc`'s signature (and that single argument will be used in the calls to both `MyOtherFunc1` and `MyOtherFunc2`).
 
 ### Changed
@@ -570,7 +563,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.17.24...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.17.25...HEAD
+[0.17.25]: https://github.com/preminger/goctx/compare/v0.17.24...v0.17.25
 [0.17.24]: https://github.com/preminger/goctx/compare/v0.17.23...v0.17.24
 [0.17.23]: https://github.com/preminger/goctx/compare/v0.17.22...v0.17.23
 [0.17.22]: https://github.com/preminger/goctx/compare/v0.17.21...v0.17.22
