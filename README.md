@@ -125,44 +125,44 @@ If you are looking for the CHANGELOG for the project, it can be found [here](./C
 
 You can install the CLI via Homebrew, with `go install`, or build from source.
 
-- Homebrew (recommended for macOS/Linux):
+### Homebrew (recommended for macOS/Linux)
 
-  Option A: tap once, then install/update normally:
+- Option A: tap once, then install/update normally
+
+```shell
+brew tap preminger/tap
+brew install goctx
+# later updates
+brew upgrade goctx
+```
+
+- Option B: install directly from the tap without adding it globally
+
+```shell
+brew install preminger/tap/goctx
+```
+
+### Latest version using `go install`
+
+```shell
+go install github.com/preminger/goctx/app/goctx@latest
+```
+
+This will install a `goctx` binary in your `GOBIN` (or `$GOPATH/bin`).
+
+### Build from source (requires Go and optionally goreleaser)
+
+- Simple build:
 
   ```shell
-  brew tap preminger/tap
-  brew install goctx
-  # later updates
-  brew upgrade goctx
+  go build -o bin/goctx ./app/goctx
   ```
 
-  Option B: install directly from the tap without adding it globally:
+- Using Stave and GoReleaser (snapshot build):
 
   ```shell
-  brew install preminger/tap/goctx
+  stave build
   ```
-
-- Latest version using `go install`:
-
-  ```shell
-  go install github.com/preminger/goctx/app/goctx@latest
-  ```
-
-  This will install a `goctx` binary in your `GOBIN` (or `$GOPATH/bin`).
-
-- Build from source (requires Go and optionally goreleaser):
-
-  - Simple build:
-
-    ```shell
-    go build -o bin/goctx ./app/goctx
-    ```
-
-  - Using Stave and GoReleaser (snapshot build):
-
-    ```shell
-    stave build
-    ```
 
   Artifacts will be placed under the `dist/` directory when using GoReleaser.
 
