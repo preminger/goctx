@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.17.26] - 2026-03-28
+## [0.17.28] - 2026-03-28
+
+### Changed
+
+- Update [CONTRIBUTING.md](./CONTRIBUTING.md) to remove outdated mention of `husky`. (Not necessary for quite some time now, given updates to `stave` that added native hooks-management capabilities.)
+
+## [0.17.27] - 2026-03-28
 
 ### Changed
 
@@ -575,7 +581,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.17.26...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.17.28...HEAD
+[0.17.28]: https://github.com/preminger/goctx/compare/v0.17.27...v0.17.28
+[0.17.27]: https://github.com/preminger/goctx/compare/v0.17.26...v0.17.27
 [0.17.26]: https://github.com/preminger/goctx/compare/v0.17.25...v0.17.26
 [0.17.25]: https://github.com/preminger/goctx/compare/v0.17.24...v0.17.25
 [0.17.24]: https://github.com/preminger/goctx/compare/v0.17.23...v0.17.24
