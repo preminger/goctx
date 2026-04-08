@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.31] - 2026-04-08
+
+### Changed
+
+- Bump Go version to `1.26.2` (and update dependencies).
+
 ## [0.17.30] - 2026-03-31
 
 ### Changed
@@ -593,7 +599,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.17.30...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.17.31...HEAD
+[0.17.31]: https://github.com/preminger/goctx/compare/v0.17.30...v0.17.31
 [0.17.30]: https://github.com/preminger/goctx/compare/v0.17.29...v0.17.30
 [0.17.29]: https://github.com/preminger/goctx/compare/v0.17.28...v0.17.29
 [0.17.28]: https://github.com/preminger/goctx/compare/v0.17.27...v0.17.28
