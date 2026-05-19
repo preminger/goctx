@@ -1,6 +1,8 @@
 version: "2"
 run:
   tests: true
+  build-tags:
+    - stave
 linters:
   default: none
   enable:
@@ -35,7 +37,7 @@ linters:
     - gocyclo
     - godot
     - goheader
-    - gomodguard
+    - gomodguard_v2
     - goprintffuncname
     - gosec
     - govet
@@ -103,6 +105,8 @@ linters:
       ignore-comments: true
     gocognit:
       min-complexity: 50
+    goconst:
+      ignore-tests: true
     gocritic:
       settings:
         captLocal:
@@ -111,21 +115,20 @@ linters:
           skipRecvDeref: false
     gocyclo:
       min-complexity: 50
-    gomodguard:
+    gomodguard_v2:
       blocked:
-        modules:
-          - github.com/golang/protobuf:
-              recommendations:
-                - google.golang.org/protobuf
-              reason: see https://developers.google.com/protocol-buffers/docs/reference/go/faq#modules
-          - github.com/satori/go.uuid:
-              recommendations:
-                - github.com/google/uuid
-              reason: satori's package is not maintained
-          - github.com/gofrs/uuid:
-              recommendations:
-                - github.com/google/uuid
-              reason: gofrs' package is not go module
+        - module: github.com/golang/protobuf
+          recommendations:
+            - google.golang.org/protobuf
+          reason: see https://developers.google.com/protocol-buffers/docs/reference/go/faq#modules
+        - module: github.com/satori/go.uuid
+          recommendations:
+            - github.com/google/uuid
+          reason: satori's package is not maintained
+        - module: github.com/gofrs/uuid
+          recommendations:
+            - github.com/google/uuid
+          reason: gofrs' package is not go module
     govet:
       disable:
         - fieldalignment
@@ -200,7 +203,7 @@ linters:
           disabled: false
         - name: context-as-argument
           arguments:
-            - allowTypesBefore: '*testing.T,*github.com/user/repo/testing.Harness'
+            - allowTypesBefore: "*testing.T,*github.com/user/repo/testing.Harness"
           disabled: false
         - name: context-keys-type
           disabled: false
@@ -417,6 +420,8 @@ linters:
           - dupl
           - funlen
           - gochecknoglobals
+          - gochecknoinits
+          - goconst
           - gosec
           - noctx
           - wrapcheck
@@ -427,6 +432,14 @@ linters:
           - godot
           - unparam
           - wrapcheck
+        path: stavefile\.go$
+      - linters:
+          - forbidigo
+        path: testmain_test\.go$
+      - linters:
+          - gochecknoinits
+          - noctx
+          - unused
         path: stavefile\.go$
     paths:
       - third_party$
