@@ -64,7 +64,7 @@ checksum:
 snapshot:
   version_template: "{{ .Tag }}-dev"
 
-brews:
+homebrew_casks:
   - name: goctx
     repository:
       owner: preminger
@@ -77,24 +77,24 @@ brews:
     description: "Command-line Go utility that automatically adds missing 'plumbing' for `context.Context` parameters along the call-graph leading to a given function."
     license: "Apache-2.0"
 
-    # Installation logic for the binary and completions
-    # We point to the 'completions' folder created in the archive step above
-    install: |
-      bin.install "goctx"
-      bash_completion.install "completions/goctx.bash" => "goctx"
-      zsh_completion.install "completions/goctx.zsh" => "_goctx"
-      fish_completion.install "completions/goctx.fish"
+    binaries:
+      - goctx
 
-    # Useful information displayed after 'brew install'
+    # Instructs Homebrew to execute the binary to fetch shell completions natively
+    generate_completions_from_executable:
+      executable: "goctx"
+      args: ["completion"] # Adjust if your subcommand is named differently
+      shell_parameter_format: cobra # Options: cobra, clap, click, flag, none, typer
+
     caveats: |
+      If you previously installed goctx via homebrew formulas, please run:
+        brew uninstall preminger/tap/goctx
+
       To enable completions, you may need to add the following to your shell profile, and then open a new shell:
         zsh:
           autoload -U compinit && compinit
         bash:
           [[ -r "$(brew --prefix)/etc/profile.d/bash_completion.sh" ]] && . "$(brew --prefix)/etc/profile.d/bash_completion.sh"
-
-    test: |
-      system "#{bin}/goctx --version"
 
 release:
   draft: false

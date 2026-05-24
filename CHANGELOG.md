@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.34] - 2026-05-24
+
+### Changed
+
+- Transition to new Goreleaser `homebrew_casks:` apparatus (after deprecation of `brews:`). This means that `stave` will now be released to Homebrew as a cask rather than a formula, and the new cask is intentionally configured to _conflict_ with the old formula.
+- Bump all updatable Go dependencies to their latest versions as of this date.
+- Bump `stave` to `v0.14.9`.
+
 ## [0.17.33] - 2026-05-19
 
 ### Changed
@@ -96,7 +104,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Change pre-push [trufflehog](https://github.com/trufflesecurity/trufflehog) hook to only scan *changes*, rather than entire repo.
+- Change pre-push [trufflehog](https://github.com/trufflesecurity/trufflehog) hook to only scan _changes_, rather than entire repo.
 - Bump `stave` to `v0.10.10`.
 
 ## [0.17.18] - 2026-02-19
@@ -219,7 +227,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Use `stave` version `0.6.x`'s [*Keep a Changelog*](https://keepachangelog.com/en/1.1.0/)-based release notes functionality.
+- Use `stave` version `0.6.x`'s [_Keep a Changelog_](https://keepachangelog.com/en/1.1.0/)-based release notes functionality.
 - Ship to Homebrew as a formula rather than a cask, and ship with completions support.
 
 ## [0.16.4] - 2025-12-22
@@ -337,7 +345,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- When you are in a subdir *below* where the `go.mod` is, and you run `goctx` with a TARGET argument that specifies a function in a source file in the current dir - but that function is called elsewhere in the module *outside* of this subdir - the app now adjusts all the relevant call sites within the module, not just the ones in the current subdir.
+- When you are in a subdir _below_ where the `go.mod` is, and you run `goctx` with a TARGET argument that specifies a function in a source file in the current dir - but that function is called elsewhere in the module _outside_ of this subdir - the app now adjusts all the relevant call sites within the module, not just the ones in the current subdir.
 - Both functions defined in `*_test.go` files, and callsites contained in `*_test.go` files (even in cases where no signatures of functions defined in `*_test.go` were changed), are now correctly handled.
 - App now correctly distinguishes between `MyFunc()`, `xyz.MyFunc()` (where `xyz` is a package name), `a.MyFunc()` (where `a` is an object of type `TypeA`), and `b.MyFunc()` (where `b` is an object of type `TypeB`). Changes to the function signature of one of these will not affect call sites where the others are called.
 - When a function `MyFunc` contains calls to two functions `MyOtherFunc1` and `MyOtherFunc2`, and a context argument has been added to both `MyOtherFunc1` and `MyOtherFunc2`, only one context argument will be added to `MyFunc`'s signature (and that single argument will be used in the calls to both `MyOtherFunc1` and `MyOtherFunc2`).
@@ -549,7 +557,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- Printing of what next git tag *would* be in Makefile `test` target, and associated flags in `actions/checkout@v4` step in `checks` workflow.
+- Printing of what next git tag _would_ be in Makefile `test` target, and associated flags in `actions/checkout@v4` step in `checks` workflow.
 
 ## [0.5.2] - 2025-11-02
 
@@ -567,7 +575,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Print message about what next git tag *would* be in Makefile `test` target.
+- Print message about what next git tag _would_ be in Makefile `test` target.
 
 ### Fixed
 
@@ -611,7 +619,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.17.33...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.17.34...HEAD
+[0.17.34]: https://github.com/preminger/goctx/compare/v0.17.33...v0.17.34
 [0.17.33]: https://github.com/preminger/goctx/compare/v0.17.32...v0.17.33
 [0.17.32]: https://github.com/preminger/goctx/compare/v0.17.31...v0.17.32
 [0.17.31]: https://github.com/preminger/goctx/compare/v0.17.30...v0.17.31

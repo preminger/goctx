@@ -98,7 +98,7 @@ func Init() {
 
 // Build builds artifacts via goreleaser snapshot build
 func Build() error {
-	st.Deps(Init)
+	st.Deps(Init, Clean)
 
 	if err := sh.RunV("goreleaser", "check"); err != nil {
 		return err
@@ -109,6 +109,8 @@ func Build() error {
 
 // Release tags the next version and runs goreleaser release
 func Release() error {
+	st.Deps(Clean)
+
 	if err := releasePrepper(tagAndPush); err != nil {
 		return err
 	}
@@ -119,6 +121,8 @@ func Release() error {
 // Snapshot is like Release except it runs locally and does not push a new tag;
 // useful for debugging the release process.
 func Snapshot() error {
+	st.Deps(Clean)
+
 	noopTaggingFunc := func(string) error { return nil }
 	if err := releasePrepper(noopTaggingFunc); err != nil {
 		return err
