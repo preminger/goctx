@@ -86,6 +86,14 @@ homebrew_casks:
       args: ["completion"] # Adjust if your subcommand is named differently
       shell_parameter_format: cobra # Options: cobra, clap, click, flag, none, typer
 
+    hooks:
+      post:
+        # replace foo with the actual binary name
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/goctx"]
+          end
+
     caveats: |
       If you previously installed goctx via homebrew formulas, please run:
         brew uninstall preminger/tap/goctx

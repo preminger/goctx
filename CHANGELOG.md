@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.35] - 2026-05-24
+
+### Added
+
+- Automatically "bless" `stave` (using `xattr`) on macOS to avoid quarantine shenanigans.
+
+### Changed
+
+- Bump `stave` to `v0.14.10`.
+
 ## [0.17.34] - 2026-05-24
 
 ### Changed
@@ -619,7 +629,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.17.34...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.17.35...HEAD
+[0.17.35]: https://github.com/preminger/goctx/compare/v0.17.34...v0.17.35
 [0.17.34]: https://github.com/preminger/goctx/compare/v0.17.33...v0.17.34
 [0.17.33]: https://github.com/preminger/goctx/compare/v0.17.32...v0.17.33
 [0.17.32]: https://github.com/preminger/goctx/compare/v0.17.31...v0.17.32
