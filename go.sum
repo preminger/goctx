@@ -141,8 +141,8 @@ github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e h1:JVG44RsyaB9T2KIHavM
 github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e/go.mod h1:RbqR21r5mrJuqunuUZ/Dhy/avygyECGrLceyNeo4LiM=
 github.com/yaklabco/direnv/v2 v2.37.2-0.20260524202835-d4a632bddfe5 h1:mTM6am4L9HntIAHA0SRfX5RHAU/s7wbjRKGocvo4XnY=
 github.com/yaklabco/direnv/v2 v2.37.2-0.20260524202835-d4a632bddfe5/go.mod h1:fc8HRAhQPQdPWpFjKxZ5NGgA3Dn4I71VGtIJVPZS5LM=
-github.com/yaklabco/stave v0.14.9 h1:Ma2dEEfXEKAPnWkFcKJXNQtby9kKcGwBSFbcy2HqvoM=
-github.com/yaklabco/stave v0.14.9/go.mod h1:GeL1WJ/aUEU4w4hsVw//YaddUyZS+A/4mA+bzN3Hmgo=
+github.com/yaklabco/stave v0.14.10 h1:+Uj0NBWEMbUxzN8lYd6XimqeezkTa/tS++rFfMglExg=
+github.com/yaklabco/stave v0.14.10/go.mod h1:GeL1WJ/aUEU4w4hsVw//YaddUyZS+A/4mA+bzN3Hmgo=
 go.yaml.in/yaml/v3 v3.0.4 h1:tfq32ie2Jv2UxXFdLJdh3jXuOzWiL1fo0bu/FbuKpbc=
 go.yaml.in/yaml/v3 v3.0.4/go.mod h1:DhzuOOF2ATzADvBadXxruRBLzYTpT36CKvDb3+aBEFg=
 golang.org/x/exp v0.0.0-20260508232706-74f9aab9d74a h1:+3jdDGGB8NGb1Zktc737jlt3/A5f6UlwSzmvqUuufxw=
