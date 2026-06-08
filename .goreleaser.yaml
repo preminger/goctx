@@ -15,9 +15,9 @@ before:
     # Generate completions into a hidden cache folder.
     # This avoids the 'dist' cleanup and prevents parallel race conditions.
     - mkdir -p .buildcache/completions
-    - sh -c "go run ./app/goctx completion bash > .buildcache/completions/goctx.bash"
-    - sh -c "go run ./app/goctx completion zsh > .buildcache/completions/goctx.zsh"
-    - sh -c "go run ./app/goctx completion fish > .buildcache/completions/goctx.fish"
+    - sh -c 'go run ./app/goctx completion bash > .buildcache/completions/goctx.bash'
+    - sh -c 'go run ./app/goctx completion zsh > .buildcache/completions/goctx.zsh'
+    - sh -c 'go run ./app/goctx completion fish > .buildcache/completions/goctx.fish'
 
 builds:
   - id: goctx
@@ -83,7 +83,6 @@ homebrew_casks:
     # Instructs Homebrew to execute the binary to fetch shell completions natively
     generate_completions_from_executable:
       executable: "goctx"
-      args: ["completion"] # Adjust if your subcommand is named differently
       shell_parameter_format: cobra # Options: cobra, clap, click, flag, none, typer
 
     hooks:
