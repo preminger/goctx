@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.39] - 2026-06-08
+
+### Fixed
+
+- Goreleaser config for generation of completions in Homebrew release pipeline. (Broke as part of the transition in [0.17.34](#01734---2026-05-24).)
+
 ## [0.17.38] - 2026-06-08
 
 ### Changed
@@ -648,7 +654,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.17.38...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.17.39...HEAD
+[0.17.39]: https://github.com/preminger/goctx/compare/v0.17.38...v0.17.39
 [0.17.38]: https://github.com/preminger/goctx/compare/v0.17.37...v0.17.38
 [0.17.37]: https://github.com/preminger/goctx/compare/v0.17.36...v0.17.37
 [0.17.36]: https://github.com/preminger/goctx/compare/v0.17.35...v0.17.36
