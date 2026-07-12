@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Test suite now produces better-styled HTML coverage output using `gocov-html`.
+- Bump all updatable Go dependencies to their latest versions as of this date.
+
+## [0.17.42] - 2026-07-11
+
+### Changed
+
 - Bump all updatable Go dependencies to their latest versions as of this date.
 
 ## [0.17.41] - 2026-07-01
