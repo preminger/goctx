@@ -610,7 +610,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- Printing of what next git tag _would_ be in Makefile `test` target, and associated flags in `actions/checkout@v4` step in `checks` workflow.
+- Printing of what next git tag _would_ be in Makefile `test` target, and associated flags in `actions/checkout@v7` step in `checks` workflow.
 
 ## [0.5.2] - 2025-11-02
 

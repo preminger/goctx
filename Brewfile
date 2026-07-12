@@ -1,17 +1,7 @@
-# Homebrew dependencies for the goctx project
-# Usage:
-#   brew bundle install --no-lock
-#   brew bundle cleanup --force   # optional: remove anything not in this Brewfile
+ENV["HOMEBREW_BUNDLE_NO_UPGRADE"] = "1"
 
-# Go-related formulae
 brew "go"
-brew "gofumpt"
-brew "goimports"
-brew "golangci-lint"
-brew "golangci-lint-langserver"
-brew "goreleaser"
 brew "trufflehog"
-
 brew "markdownlint-cli2"
 
 go "github.com/yaklabco/stave"

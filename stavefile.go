@@ -1,13 +1,14 @@
 //go:build stave
 
-// This is the build script for goctx.
+// This is the build script for gitwright.org
 package main
 
 import (
 	"bytes"
 	"cmp"
-	"errors"
+	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -25,6 +26,7 @@ import (
 	"github.com/yaklabco/stave/pkg/stave"
 	"github.com/yaklabco/stave/pkg/stave/prettylog"
 	"github.com/yaklabco/stave/pkg/ui"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -32,10 +34,17 @@ const (
 
 	buildCacheDirName    = ".buildcache"
 	releaseNotesFilename = "release-notes.md"
+
+	coverageOutFilename  = "coverage.out"
+	coverageHTMLFilename = "coverage.html"
+
+	dbUpPollingInterval = 1 * time.Second
+	dbUpPollingTimeout  = 20 * time.Second
 )
 
 var (
-	repoRoot string
+	repoRoot  string
+	devDBPath string
 )
 
 func init() {
@@ -54,6 +63,8 @@ func init() {
 	if err != nil {
 		panic(fmt.Errorf("failed to get absolute path for repository root: %w", err))
 	}
+
+	devDBPath = filepath.Join(repoRoot, ".devdb")
 }
 
 // *********************************************************************
@@ -93,18 +104,18 @@ func All() error {
 
 // Init installs required tools and sets up git hooks and modules
 func Init() {
-	st.Deps(Prereq.Brew, Setup.Hooks, Prereq.Go)
+	st.Deps(Prereq.All)
 }
 
 // Build builds artifacts via goreleaser snapshot build
 func Build() error {
 	st.Deps(Init, Clean)
 
-	if err := sh.RunV("goreleaser", "check"); err != nil {
+	if err := sh.RunV("go", "tool", "goreleaser", "check"); err != nil {
 		return err
 	}
 
-	return sh.RunV("goreleaser", "--parallelism", numProcsAsString(), "build", "--clean", "--snapshot")
+	return sh.RunV("go", "tool", "goreleaser", "--parallelism", numProcsAsString(), "build", "--clean", "--snapshot")
 }
 
 // Release tags the next version and runs goreleaser release
@@ -115,7 +126,7 @@ func Release() error {
 		return err
 	}
 
-	return sh.Run("goreleaser", "--parallelism", numProcsAsString(), "release", "--clean", "--release-notes="+filepath.Join(buildCacheDirName, releaseNotesFilename))
+	return sh.Run("go", "tool", "goreleaser", "--parallelism", numProcsAsString(), "release", "--clean", "--release-notes="+filepath.Join(buildCacheDirName, releaseNotesFilename))
 }
 
 // Snapshot is like Release except it runs locally and does not push a new tag;
@@ -128,7 +139,11 @@ func Snapshot() error {
 		return err
 	}
 
-	return sh.Run("goreleaser", "--parallelism", numProcsAsString(), "release", "--clean", "--snapshot", "--release-notes="+filepath.Join(buildCacheDirName, releaseNotesFilename))
+	return sh.Run(
+		"go", "tool", "goreleaser",
+		"--parallelism", numProcsAsString(), "release", "--clean", "--snapshot",
+		"--release-notes="+filepath.Join(buildCacheDirName, releaseNotesFilename),
+	)
 }
 
 // Clean removes the dist directory created by goreleaser
@@ -145,6 +160,18 @@ func Clean() error {
 // *
 
 type Prereq st.Namespace
+
+func (Prereq) Default() error {
+	st.Deps(Prereq.All)
+
+	return nil
+}
+
+func (Prereq) All() error {
+	st.Deps(Prereq.Go, Prereq.Brew, Setup.Hooks)
+
+	return nil
+}
 
 // Go tidies modules and runs go generate
 func (Prereq) Go() error {
@@ -176,6 +203,18 @@ func (Prereq) Brew() error {
 
 type Setup st.Namespace
 
+func (Setup) Default() error {
+	st.Deps(Setup.All)
+
+	return nil
+}
+
+func (Setup) All() error {
+	st.Deps(Setup.Hooks)
+
+	return nil
+}
+
 // Hooks configures git hooks to use stave targets
 func (Setup) Hooks() error {
 	st.Deps(Prereq.Brew)
@@ -202,13 +241,13 @@ func (Setup) Hooks() error {
 		hooksSuffix = " (" + strings.Join(configuredHooks, ", ") + ")"
 	}
 
-	outputf("%s %s %s%s\n",
-		successStyle.Render("⚙️"),
-		labelStyle.Render("Git hooks configured:"),
-		valueStyle.Render("Stave"),
-		hooksSuffix,
-	)
 	if st.Verbose() {
+		outputf("%s %s %s%s\n",
+			successStyle.Render("⚙️"),
+			labelStyle.Render("Git hooks configured:"),
+			valueStyle.Render("Stave"),
+			hooksSuffix,
+		)
 		outputf("  %s %s\n", labelStyle.Render("Directory:"), valueStyle.Render(filepath.Join(".git", "hooks")+string(filepath.Separator)))
 		outputf("  %s %s\n", labelStyle.Render("Config:"), valueStyle.Render("stave.yaml"))
 	}
@@ -266,11 +305,7 @@ func (Lint) Markdown() error {
 func (Lint) Go() error {
 	st.Deps(Init)
 
-	args := []string{"run", "--allow-parallel-runners", "--build-tags='!ignore'", "--fix"}
-
-	_ = sh.Run("golangci-lint", args...) //nolint:errcheck // Intentional; re-run without `--fix` on next line.
-
-	out, err := sh.Output("golangci-lint", lo.Slice(args, 0, len(args)-1)...)
+	out, err := sh.Output("go", "tool", "golangci-lint", "run", "--allow-parallel-runners", "--build-tags='!ignore'", "--fix")
 	if err != nil {
 		titleStyle, blockStyle := ui.GetBlockStyles()
 		outputln(titleStyle.Render("golangci-lint output"))
@@ -279,7 +314,7 @@ func (Lint) Go() error {
 		return err
 	}
 
-	slog.Debug("golangci-lint completed successfully")
+	slog.Info("golangci-lint completed successfully")
 
 	return nil
 }
@@ -293,6 +328,19 @@ func (Lint) Go() error {
 // *
 
 type Check st.Namespace
+
+func (Check) Default() error {
+	st.Deps(Check.All)
+
+	return nil
+}
+
+func (Check) All() error {
+	// st.Deps(Check.Changelog)
+	st.Deps(Check.GitStateClean, Check.Secrets)
+
+	return nil
+}
 
 // Changelog validates the changelog's format against 'Keep a Changelog' conventions
 func (Check) Changelog() error {
@@ -347,9 +395,17 @@ func (Check) Secrets() error {
 	return nil
 }
 
-// PrePush runs pre-push validations including changelog checks
-func (Check) PrePush(remoteName, _remoteURL string) error {
-	st.Deps(Prep.LinkifyChangelog)
+// PreCommit runs pre-commit validations
+func (Check) PreCommit() error {
+	// st.Deps(Prep.LinkifyChangelog)
+	st.Deps(Lint.All)
+
+	return nil
+}
+
+// PrePush runs pre-push validations
+func (Check) PrePush(_remoteName, _remoteURL string) error {
+	// st.Deps(Prep.LinkifyChangelog)
 	st.Deps(Test.All, Build)
 	st.Deps(Check.GitStateClean)
 
@@ -363,34 +419,34 @@ func (Check) PrePush(remoteName, _remoteURL string) error {
 		return err
 	}
 
-	if len(pushRefs) == 0 {
-		slog.Warn("no refs pushed, skipping changelog pre-push check")
-		return nil
-	}
-
-	slog.Info("about to run changelog pre-push check", slog.String("remote_name", remoteName), slog.Any("push_refs", pushRefs))
-	result, err := changelog.PrePushCheck(changelog.PrePushCheckOptions{
-		RemoteName:    remoteName,
-		ChangelogPath: changelogFilename,
-		Refs:          pushRefs,
-	})
-	if err != nil {
-		return fmt.Errorf("changelog pre-push check failed: %w", err)
-	}
-
-	if result.HasErrors() {
-		return fmt.Errorf("changelog pre-push check failed: %s", result.Errors)
-	}
-
-	if !result.ChangelogValid {
-		return errors.New("changelog pre-push check failed: changelog is not valid")
-	}
-
-	if !result.ChangelogUpdated {
-		return errors.New("changelog pre-push check failed: changelog has not been updated")
-	}
-
-	slog.Info("changelog next-version verification passed")
+	// if len(pushRefs) == 0 {
+	// 	slog.Warn("no refs pushed, skipping changelog pre-push check")
+	// 	return nil
+	// }
+	//
+	// slog.Info("about to run changelog pre-push check", slog.String("remote_name", remoteName), slog.Any("push_refs", pushRefs))
+	// result, err := changelog.PrePushCheck(changelog.PrePushCheckOptions{
+	// 	RemoteName:    remoteName,
+	// 	ChangelogPath: changelogFilename,
+	// 	Refs:          pushRefs,
+	// })
+	// if err != nil {
+	// 	return fmt.Errorf("changelog pre-push check failed: %w", err)
+	// }
+	//
+	// if result.HasErrors() {
+	// 	return fmt.Errorf("changelog pre-push check failed: %s", result.Errors)
+	// }
+	//
+	// if !result.ChangelogValid {
+	// 	return errors.New("changelog pre-push check failed: changelog is not valid")
+	// }
+	//
+	// if !result.ChangelogUpdated {
+	// 	return errors.New("changelog pre-push check failed: changelog has not been updated")
+	// }
+	//
+	// slog.Info("changelog next-version verification passed")
 
 	return nil
 }
@@ -404,6 +460,20 @@ func (Check) PrePush(remoteName, _remoteURL string) error {
 // *
 
 type Prep st.Namespace
+
+func (Prep) Default() error {
+	st.Deps(Prep.All)
+
+	return nil
+}
+
+func (Prep) All() error {
+	// st.Deps(Prep.ReleaseNotes)
+	// st.Deps(Prep.LinkifyChangelog)
+	st.Deps(Prep.BuildCacheDir)
+
+	return nil
+}
 
 // LinkifyChangelog ensures that heading links in changelog have Link Reference Definitions
 func (Prep) LinkifyChangelog() error {
@@ -477,8 +547,8 @@ func (Test) All() error {
 	return nil
 }
 
-// Go runs Go tests with coverage and produces coverage.out and coverage.html
-func (Test) Go() error {
+// Go runs Go tests with coverage-tracking, and produces coverage output in HTML format
+func (Test) Go(ctx context.Context) error {
 	st.Deps(Init)
 
 	nProcsStr := numProcsAsString()
@@ -491,12 +561,47 @@ func (Test) Go() error {
 		"go", "tool", "gotestsum", "-f", "pkgname-and-test-fails",
 		"--",
 		"-v", "-p", nProcsStr, "-parallel", nProcsStr, "./...", "-count", "1",
-		"-coverprofile=coverage.out", "-covermode=atomic",
+		"-coverprofile="+coverageOutFilename, "-covermode=atomic",
 	); err != nil {
 		return err
 	}
 
-	return sh.Run("go", "tool", "cover", "-html=coverage.out", "-o", "coverage.html")
+	var htmlBuf bytes.Buffer
+	pipeR, pipeW := io.Pipe()
+	group, _ := errgroup.WithContext(ctx)
+
+	group.Go(func() error {
+		defer pipeW.Close()
+		slog.Debug("converting coverage output to JSON...")
+		if err := sh.Piper(nil, pipeW, os.Stderr, "go", "tool", "gocov", "convert", coverageOutFilename); err != nil {
+			return fmt.Errorf("error converting %q to JSON: %w", coverageOutFilename, err)
+		}
+		slog.Debug("done converting coverage output to JSON.")
+		return nil
+	})
+	group.Go(func() error {
+		slog.Debug("converting coverage JSON to HTML...")
+		cmdStr := "go"
+		// argStrs := []string{"tool", "gocov-html", "-t", "kit"}
+		argStrs := []string{"tool", "gocov-html"}
+		if err := sh.Piper(pipeR, &htmlBuf, os.Stderr, cmdStr, argStrs...); err != nil {
+			return fmt.Errorf("error converting coverage JSON to HTML: %w", err)
+		}
+		slog.Debug("done converting coverage JSON to HTML.")
+		return nil
+	})
+
+	if err := group.Wait(); err != nil {
+		return err
+	}
+
+	slog.Info("writing coverage HTML file...")
+	if err := os.WriteFile(coverageHTMLFilename, htmlBuf.Bytes(), 0o600); err != nil {
+		return fmt.Errorf("error writing %q: %w", coverageHTMLFilename, err)
+	}
+	slog.Info("done writing coverage HTML file.")
+
+	return nil
 }
 
 // *
@@ -517,6 +622,26 @@ func (Debug) Parallelism() {
 
 // *
 // * Debug namespace
+// *********************************************************************
+
+// *********************************************************************
+// * Down namespace
+// *
+
+type Down st.Namespace
+
+func (Down) Default() error {
+	st.Deps(Down.All)
+
+	return nil
+}
+
+func (Down) All() error {
+	return nil
+}
+
+// *
+// * Down namespace
 // *********************************************************************
 
 // *********************************************************************
