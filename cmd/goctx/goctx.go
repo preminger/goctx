@@ -105,6 +105,7 @@ resolution is ambiguous and the tool will ask you to disambiguate by line number
 				slog.Bool("html", opts.HTML),
 				slog.String("workDir", opts.WorkDir),
 			)
+
 			return goctx.Run(cmd.Context(), opts)
 		},
 	}

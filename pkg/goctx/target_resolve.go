@@ -6,6 +6,7 @@ import (
 	"go/token"
 	"go/types"
 	"log/slog"
+	"slices"
 
 	"github.com/yaklabco/stave/pkg/fsutils"
 	"golang.org/x/tools/go/packages"
@@ -148,19 +149,22 @@ func enclosingFuncDecl(file *ast.File, targetNode ast.Node) *ast.FuncDecl {
 			if len(stack) > 0 {
 				stack = stack[:len(stack)-1]
 			}
+
 			return true
 		}
 		stack = append(stack, node)
 		if node == targetNode {
 			// walk back to find enclosing FuncDecl
-			for i := len(stack) - 1; i >= 0; i-- {
-				if fd, ok := stack[i].(*ast.FuncDecl); ok {
+			for _, s := range slices.Backward(stack) {
+				if fd, ok := s.(*ast.FuncDecl); ok {
 					found = fd
 					break
 				}
 			}
+
 			return false
 		}
+
 		return true
 	})
 

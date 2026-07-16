@@ -26,7 +26,7 @@ func genGoldie(t *testing.T) *goldie.Goldie {
 
 func fixturesDir(t *testing.T) string {
 	t.Helper()
-	_, file, _, _ := runtime.Caller(0)
+	_, file, _, _ := runtime.Caller(0) //nolint:dogsled // Okay in a test.
 
 	return filepath.Join(filepath.Dir(file), "testdata", "golden", t.Name())
 }
@@ -41,7 +41,7 @@ func normalizeNewlines(inBytes []byte) []byte {
 // inputDir returns the path to testdata/input alongside this test file.
 func inputDir(t *testing.T) string {
 	t.Helper()
-	_, file, _, _ := runtime.Caller(0)
+	_, file, _, _ := runtime.Caller(0) //nolint:dogsled // Okay in a test.
 
 	return filepath.Join(filepath.Dir(file), "testdata", "input")
 }
@@ -67,6 +67,7 @@ func writeTempModuleFromInput(t *testing.T) string {
 // copyDir recursively copies files from src to dst.
 func copyDir(t *testing.T, src, dst string) error {
 	t.Helper()
+
 	return filepath.WalkDir(src, func(path string, dirEntry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -87,6 +88,7 @@ func copyDir(t *testing.T, src, dst string) error {
 		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 			return err
 		}
+
 		return os.WriteFile(target, data, 0o644)
 	})
 }

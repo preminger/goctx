@@ -311,6 +311,7 @@ func (Lint) Go() error {
 		outputln(titleStyle.Render("golangci-lint output"))
 		outputln(blockStyle.Render(out))
 		outputln("")
+
 		return err
 	}
 
@@ -577,6 +578,7 @@ func (Test) Go(ctx context.Context) error {
 			return fmt.Errorf("error converting %q to JSON: %w", coverageOutFilename, err)
 		}
 		slog.Debug("done converting coverage output to JSON.")
+
 		return nil
 	})
 	group.Go(func() error {
@@ -588,6 +590,7 @@ func (Test) Go(ctx context.Context) error {
 			return fmt.Errorf("error converting coverage JSON to HTML: %w", err)
 		}
 		slog.Debug("done converting coverage JSON to HTML.")
+
 		return nil
 	})
 
@@ -672,6 +675,7 @@ func isQuietMode() bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -682,6 +686,7 @@ func flags() string {
 	if theTag == "" {
 		theTag = "dev"
 	}
+
 	return fmt.Sprintf(
 		`-X "github.com/yaklabco/stave/cmd/stave/version.BuildDate=%s"`+` `+
 			`-X "github.com/yaklabco/stave/cmd/stave/version.Commit=%s"`+` `+
@@ -721,6 +726,7 @@ func findStaveHooks() []string {
 	if err != nil || cfg.Hooks == nil {
 		return nil
 	}
+
 	return cfg.Hooks.HookNames()
 }
 
@@ -819,6 +825,7 @@ func runTrufflehog(extraFlags ...string) error {
 		outputln(titleStyle.Render("trufflehog stderr:"))
 		outputln(blockStyle.Render(stderrBuf.String()))
 		outputln("")
+
 		return err
 	}
 
