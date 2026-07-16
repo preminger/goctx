@@ -44,6 +44,7 @@ func ensureFuncHasCtxParam(fset *token.FileSet, file *ast.File, fn *ast.FuncDecl
 				field.Names[0].Name = VarNameCtx
 				field.Names[0].NamePos = token.NoPos
 				ensureImport(fset, file, "context")
+
 				return true
 			}
 			// Already named (or rename not requested): nothing to do
@@ -132,7 +133,7 @@ func ensureImport(fset *token.FileSet, file *ast.File, path string) {
 		}
 	}
 	// Snapshot old end line for each existing import path to preserve trailing comment association.
-	oldLineByPath := map[string]int{}
+	oldLineByPath := make(map[string]int)
 	for _, d := range file.Decls {
 		if gd, ok := d.(*ast.GenDecl); ok && gd.Tok == token.IMPORT {
 			for _, s := range gd.Specs {
@@ -176,6 +177,7 @@ func ensureImport(fset *token.FileSet, file *ast.File, path string) {
 			if isI == nil || isJ == nil || isI.Path == nil || isJ.Path == nil {
 				return false
 			}
+
 			return strings.Trim(isI.Path.Value, "\"") < strings.Trim(isJ.Path.Value, "\"")
 		})
 	}
@@ -207,7 +209,7 @@ func repositionImportTrailingComments(fset *token.FileSet, file *ast.File, oldLi
 		lineToPath[ln] = p
 	}
 	// Build current path -> spec mapping
-	pathToSpec := map[string]*ast.ImportSpec{}
+	pathToSpec := make(map[string]*ast.ImportSpec)
 	for _, d := range file.Decls {
 		if gd, ok := d.(*ast.GenDecl); ok && gd.Tok == token.IMPORT {
 			for _, s := range gd.Specs {

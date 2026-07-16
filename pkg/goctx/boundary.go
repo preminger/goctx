@@ -183,12 +183,14 @@ func ensureCtxAvailableAtBoundary(pkg *packages.Package, file *ast.File, fn *ast
 		slog.Debug("ctx already in scope at boundary", slog.String("func", fn.Name.Name))
 		return true, nil
 	}
-	switch reason {
+
+	switch reason { //nolint:exhaustive // False positive; this switch has a `default` clause.
 	case StopReasonMain:
 		ensureImport(pkg.Fset, file, "context")
 		stmt := makeAssignCtxBackground()
 		insertAfterLeadingBlankAssignsF(pkg.Fset, file, fn, stmt)
 		slog.Debug("inserted ctx := context.Background()", slog.String("func", fn.Name.Name))
+
 		return true, nil
 	case StopReasonHTTP:
 		reqName := findHTTPRequestParamName(fn, pkg)
@@ -198,6 +200,7 @@ func ensureCtxAvailableAtBoundary(pkg *packages.Package, file *ast.File, fn *ast
 		stmt := makeAssignCtxFromRequest(reqName)
 		insertAtFuncStartF(fn, stmt)
 		slog.Debug("inserted ctx := req.Context()", slog.String("func", fn.Name.Name), slog.String("req", reqName))
+
 		return true, nil
 	case StopReasonTest:
 		testName := findTestingParamName(fn, pkg)
@@ -207,6 +210,7 @@ func ensureCtxAvailableAtBoundary(pkg *packages.Package, file *ast.File, fn *ast
 			stmt := makeAssignCtxBackground()
 			insertAtFuncStartF(fn, stmt)
 			slog.Debug("inserted ctx := context.Background() (fallback for testing boundary)", slog.String("func", fn.Name.Name))
+
 			return true, nil
 		}
 		stmt := makeAssignCtxFromTesting(testName)
@@ -214,6 +218,7 @@ func ensureCtxAvailableAtBoundary(pkg *packages.Package, file *ast.File, fn *ast
 		// leading blank assigns like `_ = HelperTarget(...)`) so that those calls can use ctx.
 		insertAtFuncStartF(fn, stmt)
 		slog.Debug("inserted ctx := t.Context()", slog.String("func", fn.Name.Name), slog.String("t", testName))
+
 		return true, nil
 	default:
 		return false, nil
@@ -237,6 +242,7 @@ func insertAfterLeadingBlankAssignsF(fset *token.FileSet, file *ast.File, fn *as
 		if ident, ok := as.Lhs[0].(*ast.Ident); !ok || ident.Name != "_" {
 			break
 		}
+
 		idx++
 	}
 	// Compute a base position for nicer formatting.
@@ -365,6 +371,7 @@ func findHTTPRequestParamName(fn *ast.FuncDecl, p *packages.Package) string {
 			if len(field.Names) > 0 {
 				return field.Names[0].Name
 			}
+
 			return "req"
 		}
 	}
@@ -437,6 +444,7 @@ func getCtxIdentInScope(fn *ast.FuncDecl, pkg *packages.Package) string {
 				return false
 			}
 		}
+
 		return true
 	})
 	if found != "" {
@@ -462,6 +470,7 @@ func getCtxIdentInScope(fn *ast.FuncDecl, pkg *packages.Package) string {
 				return false
 			}
 		}
+
 		return true
 	})
 
@@ -483,6 +492,7 @@ func isTestingBoundary(fn *ast.FuncDecl, pkg *packages.Package) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -503,11 +513,13 @@ func isTestingParamType(pkg *packages.Package, expr ast.Expr) bool {
 		if named.Obj().Pkg().Path() != "testing" {
 			return false
 		}
+
 		switch named.Obj().Name() {
 		case "T", "B", "F", "TB":
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -522,8 +534,10 @@ func findTestingParamName(fn *ast.FuncDecl, pkg *packages.Package) string {
 			if len(field.Names) > 0 && field.Names[0] != nil && field.Names[0].Name != "" && field.Names[0].Name != "_" {
 				return field.Names[0].Name
 			}
+
 			return "t"
 		}
 	}
+
 	return ""
 }

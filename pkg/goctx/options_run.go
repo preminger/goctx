@@ -81,7 +81,7 @@ func Run(_ context.Context, opts Options) error {
 		slog.String("func", res.Decl.Name.Name),
 	)
 
-	modifiedFiles := map[string]bool{}
+	modifiedFiles := make(map[string]bool)
 
 	// Decide if target already has a usable context.Context parameter (reuse case)
 	reuseExistingCtxInTarget := functionHasContextParam(res.Decl, res.Info)
@@ -157,6 +157,7 @@ func loadAllPackages(dir string, tags string) ([]*packages.Package, error) {
 	_ = packages.PrintErrors(pkgs)
 
 	slog.Debug("packages loaded", slog.Int("count", len(pkgs)))
+
 	return pkgs, nil
 }
 
@@ -231,7 +232,7 @@ func ensureTargetHasCtx(res *targetResolution, modifiedFiles map[string]bool) {
 
 // traverseAndPropagate walks callers recursively from start and ensures ctx propagation.
 func traverseAndPropagate(pkgs []*packages.Package, start types.Object, opts Options, stopSpec *targetSpec, modifiedFiles map[string]bool, sawAnyCall *bool) error {
-	visited := map[types.Object]bool{}
+	visited := make(map[types.Object]bool)
 	queue := []types.Object{start}
 	for len(queue) > 0 {
 		curr := queue[0]
@@ -295,6 +296,7 @@ func resolveCalled(info *types.Info, fun ast.Expr) (types.Object, string) {
 			fun = x.X
 			continue
 		}
+
 		break
 	}
 
@@ -388,6 +390,7 @@ func isMethodTargetMatch(calledObj, curr types.Object) bool {
 	}
 	sameRecv := cObj.Pkg().Path() == oObj.Pkg().Path() && cObj.Name() == oObj.Name()
 	sameMethod := calledObj.Name() == curr.Name()
+
 	return sameRecv && sameMethod
 }
 
@@ -408,6 +411,7 @@ func isFreeFuncTargetMatch(calledObj, curr types.Object) bool {
 	if calledObj.Pkg() == nil || curr.Pkg() == nil {
 		return false
 	}
+
 	return calledObj.Name() == curr.Name() && calledObj.Pkg().Path() == curr.Pkg().Path()
 }
 
@@ -427,6 +431,7 @@ func isUnresolvedSamePkgIdentFallback(pkg *packages.Package, call *ast.CallExpr,
 	if _, isIdent := call.Fun.(*ast.Ident); !isIdent {
 		return false
 	}
+
 	return pkg.PkgPath == curr.Pkg().Path()
 }
 
@@ -473,6 +478,7 @@ func processCallSites(params processCallSitesParams) error {
 			ctxName := getCtxIdentInScope(enc, params.pkg)
 			ensureCallHasCtxArg(params.pkg, call, ctxName)
 			markCurrentFileModified(params)
+
 			return true
 		}
 
@@ -481,6 +487,7 @@ func processCallSites(params processCallSitesParams) error {
 			ctxName := getCtxIdentInScope(enc, params.pkg)
 			ensureCallHasCtxArg(params.pkg, call, ctxName)
 			markCurrentFileModified(params)
+
 			return true
 		}
 
@@ -500,6 +507,7 @@ func processCallSites(params processCallSitesParams) error {
 				*params.queue = append(*params.queue, def)
 			}
 		}
+
 		return true
 	})
 

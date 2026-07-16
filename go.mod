@@ -10,13 +10,13 @@ require (
 	github.com/sebdah/goldie/v2 v2.8.0
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
-	github.com/yaklabco/stave v0.16.2
+	github.com/yaklabco/stave v0.16.3
 	golang.org/x/sync v0.22.0
 	golang.org/x/tools v0.48.0
 )
 
 require (
-	4d63.com/gocheckcompilerdirectives v1.3.0 // indirect
+	4d63.com/gocheckcompilerdirectives v1.4.0 // indirect
 	4d63.com/gochecknoglobals v0.2.2 // indirect
 	al.essio.dev/pkg/shellescape v1.6.0 // indirect
 	cel.dev/expr v0.25.1 // indirect
@@ -30,11 +30,11 @@ require (
 	cloud.google.com/go/monitoring v1.25.0 // indirect
 	cloud.google.com/go/storage v1.62.2 // indirect
 	code.gitea.io/sdk/gitea v0.25.1 // indirect
-	codeberg.org/chavacava/garif v0.2.0 // indirect
+	codeberg.org/chavacava/garif v0.2.1 // indirect
 	codeberg.org/polyfloyd/go-errorlint v1.9.0 // indirect
 	dario.cat/mergo v1.0.2 // indirect
 	dev.gaijin.team/go/exhaustruct/v4 v4.0.0 // indirect
-	dev.gaijin.team/go/golib v0.6.0 // indirect
+	dev.gaijin.team/go/golib v0.8.1 // indirect
 	github.com/42wim/httpsig v1.2.4 // indirect
 	github.com/4meepo/tagalign v1.4.3 // indirect
 	github.com/Abirdcfly/dupword v0.1.7 // indirect
@@ -343,7 +343,7 @@ require (
 	github.com/matm/gocov-html v1.4.0 // indirect
 	github.com/matoous/godox v1.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
-	github.com/mattn/go-isatty v0.0.22 // indirect
+	github.com/mattn/go-isatty v0.0.23 // indirect
 	github.com/mattn/go-mastodon v0.0.11 // indirect
 	github.com/mattn/go-runewidth v0.0.24 // indirect
 	github.com/mgechev/revive v1.15.0 // indirect

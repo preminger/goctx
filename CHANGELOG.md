@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.45] - 2026-07-16
+
+### Changed
+
+- Transitioned `golangci-lint` configuration from whitelist-based to blacklist-based, and fixed newly-surfaced linting issues.
+- Bump all updatable Go dependencies to their latest versions as of this date.
+
 ## [0.17.44] - 2026-07-11
 
 ### Changed
@@ -685,7 +692,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.17.43...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.17.45...HEAD
+[0.17.45]: https://github.com/preminger/goctx/compare/v0.17.44...v0.17.45
+[0.17.44]: https://github.com/preminger/goctx/compare/v0.17.43...v0.17.44
 [0.17.43]: https://github.com/preminger/goctx/compare/v0.17.42...v0.17.43
 [0.17.42]: https://github.com/preminger/goctx/compare/v0.17.41...v0.17.42
 [0.17.41]: https://github.com/preminger/goctx/compare/v0.17.40...v0.17.41
