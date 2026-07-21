@@ -10,7 +10,7 @@ require (
 	github.com/sebdah/goldie/v2 v2.8.0
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
-	github.com/yaklabco/stave v0.16.3
+	github.com/yaklabco/stave v0.16.5
 	golang.org/x/sync v0.22.0
 	golang.org/x/tools v0.48.0
 )
@@ -146,10 +146,10 @@ require (
 	github.com/charithe/durationcheck v0.0.11 // indirect
 	github.com/charmbracelet/colorprofile v0.4.3 // indirect
 	github.com/charmbracelet/lipgloss v1.1.0 // indirect
-	github.com/charmbracelet/ultraviolet v0.0.0-20260713092251-4bee1914c0cf // indirect
+	github.com/charmbracelet/ultraviolet v0.0.0-20260720091822-7cc6674724ac // indirect
 	github.com/charmbracelet/x/ansi v0.11.7 // indirect
 	github.com/charmbracelet/x/cellbuf v0.0.15 // indirect
-	github.com/charmbracelet/x/exp/charmtone v0.0.0-20260713092006-0d683c34c74b // indirect
+	github.com/charmbracelet/x/exp/charmtone v0.0.0-20260720091843-3eef36eaaa28 // indirect
 	github.com/charmbracelet/x/term v0.2.2 // indirect
 	github.com/charmbracelet/x/termios v0.1.1 // indirect
 	github.com/charmbracelet/x/windows v0.2.2 // indirect
@@ -491,7 +491,7 @@ require (
 	go.yaml.in/yaml/v4 v4.0.0-rc.6 // indirect
 	gocloud.dev v0.46.0 // indirect
 	golang.org/x/crypto v0.54.0 // indirect
-	golang.org/x/exp v0.0.0-20260709172345-9ea1abe57597 // indirect
+	golang.org/x/exp v0.0.0-20260718201538-764159d718ef // indirect
 	golang.org/x/exp/typeparams v0.0.0-20260209203927-2842357ff358 // indirect
 	golang.org/x/mod v0.38.0 // indirect
 	golang.org/x/net v0.57.0 // indirect
