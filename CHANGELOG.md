@@ -7,16 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.17.49] - 2026-08-05
+## [0.17.50] - 2026-08-08
+
+### Fixed
+
+- Handle single-commit condition in commitlint.yml workflow.
+
+## [0.17.49] - 2026-08-08
 
 ### Changed
 
 - Bump `stave` to `v0.16.10`.
 - Bump all updatable Go dependencies to their latest versions as of this date.
-
-### Fixed
-
-- Handle single-commit condition in commitlint.yml workflow.
 
 ## [0.17.48] - 2026-08-08
 
@@ -727,7 +729,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.17.49...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.17.50...HEAD
+[0.17.50]: https://github.com/preminger/goctx/compare/v0.17.49...v0.17.50
 [0.17.49]: https://github.com/preminger/goctx/compare/v0.17.48...v0.17.49
 [0.17.48]: https://github.com/preminger/goctx/compare/v0.17.47...v0.17.48
 [0.17.47]: https://github.com/preminger/goctx/compare/v0.17.46...v0.17.47
