@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.48] - 2026-08-08
+
+### Added
+
+- Added commitlint to pre-push checks.
+- Added commitlint CI check.
+
+### Changed
+
+- Parallelized pre-push checks.
+- Bump all updatable Go dependencies to their latest versions as of this date.
+
 ## [0.17.47] - 2026-08-05
 
 ### Changed
@@ -704,7 +716,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.17.47...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.17.48...HEAD
+[0.17.48]: https://github.com/preminger/goctx/compare/v0.17.47...v0.17.48
 [0.17.47]: https://github.com/preminger/goctx/compare/v0.17.46...v0.17.47
 [0.17.46]: https://github.com/preminger/goctx/compare/v0.17.45...v0.17.46
 [0.17.45]: https://github.com/preminger/goctx/compare/v0.17.44...v0.17.45
