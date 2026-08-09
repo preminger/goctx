@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"cmp"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -21,6 +22,7 @@ import (
 	"github.com/yaklabco/stave/cmd/stave/version"
 	"github.com/yaklabco/stave/config"
 	"github.com/yaklabco/stave/pkg/changelog"
+	"github.com/yaklabco/stave/pkg/gitutils"
 	"github.com/yaklabco/stave/pkg/sh"
 	"github.com/yaklabco/stave/pkg/st"
 	"github.com/yaklabco/stave/pkg/stave"
@@ -387,8 +389,17 @@ func (Check) Secrets() error {
 	st.Deps(Prereq.Brew)
 
 	slog.Info("Scanning for secrets using trufflehog...")
-	if err := runTrufflehog(); err != nil {
-		return err
+	// Check if we are in a worktree rather than a simple repo clone.
+	if gitutils.IsWorkTree(repoRoot) {
+		slog.Info("We are in a worktree; running trufflehog on filesystem...")
+		if err := runTrufflehog([]string{"filesystem", "."}); err != nil {
+			return err
+		}
+	} else {
+		slog.Info("Running trufflehog on git repo...")
+		if err := runTrufflehog([]string{"git"}, "file://"+repoRoot); err != nil {
+			return err
+		}
 	}
 
 	slog.Info("No secrets found.")
@@ -405,51 +416,55 @@ func (Check) PreCommit() error {
 }
 
 // PrePush runs pre-push validations
-func (Check) PrePush(_remoteName, _remoteURL string) error {
+func (Check) PrePush(ctx context.Context, remoteName, remoteURL string) error {
 	// st.Deps(Prep.LinkifyChangelog)
 	st.Deps(Test.All, Build)
 	st.Deps(Check.GitStateClean)
 
-	pushRefs, err := changelog.ReadPushRefs(os.Stdin)
-	if err != nil {
-		return fmt.Errorf("failed to read push refs: %w", err)
-	}
+	pipeR1, pipeW1 := io.Pipe()
 
-	err = secretsHookWorker(pushRefs)
-	if err != nil {
-		return err
-	}
+	group, ctx := errgroup.WithContext(ctx)
 
-	// if len(pushRefs) == 0 {
-	// 	slog.Warn("no refs pushed, skipping changelog pre-push check")
-	// 	return nil
-	// }
-	//
-	// slog.Info("about to run changelog pre-push check", slog.String("remote_name", remoteName), slog.Any("push_refs", pushRefs))
-	// result, err := changelog.PrePushCheck(changelog.PrePushCheckOptions{
-	// 	RemoteName:    remoteName,
-	// 	ChangelogPath: changelogFilename,
-	// 	Refs:          pushRefs,
-	// })
-	// if err != nil {
-	// 	return fmt.Errorf("changelog pre-push check failed: %w", err)
-	// }
-	//
-	// if result.HasErrors() {
-	// 	return fmt.Errorf("changelog pre-push check failed: %s", result.Errors)
-	// }
-	//
-	// if !result.ChangelogValid {
-	// 	return errors.New("changelog pre-push check failed: changelog is not valid")
-	// }
-	//
-	// if !result.ChangelogUpdated {
-	// 	return errors.New("changelog pre-push check failed: changelog has not been updated")
-	// }
-	//
-	// slog.Info("changelog next-version verification passed")
+	group.Go(func() error {
+		slog.Debug("fanning out stdin for pre-push hooks...")
+		if _, err := io.Copy(io.MultiWriter(pipeW1), os.Stdin); err != nil {
+			return err
+		}
+		slog.Debug("fan-out done, closing write-pipes...")
+		var closeErr error
+		for _, p := range []io.Closer{pipeW1} {
+			closeErr = errors.Join(closeErr, p.Close())
+		}
 
-	return nil
+		return closeErr
+	})
+
+	group.Go(func() error {
+		slog.Debug("reading in push-refs for changelog/secrets/commitlint check...")
+		pushRefs, err := changelog.ReadPushRefs(pipeR1)
+		if err != nil {
+			return fmt.Errorf("failed to read push refs: %w", err)
+		}
+		slog.Debug("push-refs read", slog.Any("refs", pushRefs))
+
+		subGroup, _ := errgroup.WithContext(ctx)
+
+		subGroup.Go(func() error {
+			return commitlintHookWorker(pushRefs)
+		})
+
+		subGroup.Go(func() error {
+			return secretsHookWorker(pushRefs)
+		})
+
+		subGroup.Go(func() error {
+			return changelogHookWorker(pushRefs, remoteName, remoteURL)
+		})
+
+		return subGroup.Wait()
+	})
+
+	return group.Wait()
 }
 
 // *
@@ -561,7 +576,7 @@ func (Test) Go(ctx context.Context) error {
 		"",
 		"go", "tool", "gotestsum", "-f", "pkgname-and-test-fails",
 		"--",
-		"-v", "-p", nProcsStr, "-parallel", nProcsStr, "./...", "-count", "1",
+		"-v", "-p", nProcsStr, "-parallel", nProcsStr, "./...",
 		"-coverprofile="+coverageOutFilename, "-covermode=atomic",
 	); err != nil {
 		return err
@@ -802,15 +817,85 @@ func numProcsAsString() string {
 	return cmp.Or(os.Getenv("STAVE_NUM_PROCESSORS"), "1")
 }
 
-func runTrufflehog(extraFlags ...string) error {
+func changelogHookWorker(pushRefs []changelog.PushRef, remoteName, _remoteURL string) error {
+	if len(pushRefs) == 0 {
+		slog.Warn("no refs pushed, skipping changelog pre-push check")
+		return nil
+	}
+
+	slog.Info("about to run changelog pre-push check", slog.String("remote_name", remoteName), slog.Any("push_refs", pushRefs))
+	result, err := changelog.PrePushCheck(changelog.PrePushCheckOptions{
+		RemoteName:    remoteName,
+		ChangelogPath: changelogFilename,
+		Refs:          pushRefs,
+	})
+	if err != nil {
+		return fmt.Errorf("changelog pre-push check failed: %w", err)
+	}
+
+	if result.HasErrors() {
+		return fmt.Errorf("changelog pre-push check failed: %s", result.Errors)
+	}
+
+	if !result.ChangelogValid {
+		return errors.New("changelog pre-push check failed: changelog is not valid")
+	}
+
+	if !result.ChangelogUpdated {
+		return errors.New("changelog pre-push check failed: changelog has not been updated")
+	}
+
+	slog.Info("changelog next-version verification passed")
+
+	return nil
+}
+
+func commitlintHookWorker(pushRefs []changelog.PushRef) error {
+	if len(pushRefs) == 0 {
+		slog.Warn("no refs pushed, skipping commitlint hook")
+		return nil
+	}
+
+	slog.Info("linting commit messages using commitlint...")
+	for _, ref := range pushRefs {
+		// Skip deleted refs - nothing to scan.
+		if ref.LocalSHA == changelog.ZeroSHA {
+			continue
+		}
+
+		remoteSHA := ref.RemoteSHA
+		if remoteSHA == changelog.ZeroSHA {
+			out, err := sh.Output("git", "merge-base", "--fork-point", "origin/main", ref.LocalSHA)
+			if err != nil {
+				return fmt.Errorf("while trying to establish fork-point: %w", err)
+			}
+			remoteSHA = strings.TrimSpace(out)
+		}
+
+		out, err := sh.Output("commitlint", "--from", remoteSHA, "--to", ref.LocalSHA)
+		if err != nil {
+			titleStyle, blockStyle := ui.GetBlockStyles()
+			outputln(titleStyle.Render("commitlint output"))
+			outputln(blockStyle.Render(out))
+			outputln("")
+
+			return err
+		}
+	}
+
+	slog.Info("commitlint done.")
+
+	return nil
+}
+
+func runTrufflehog(coreArgs []string, extraFlags ...string) error {
 	var stdoutBuf bytes.Buffer
 	var stderrBuf bytes.Buffer
 
-	args := make([]string, 0, 4+len(extraFlags)) //nolint:mnd // This is just the number of args in the next statement.
+	args := make([]string, 0, 2+len(coreArgs)+len(extraFlags))
+	args = append(args, coreArgs...)
 	args = append(args,
-		"git",
 		"--no-update", "--no-verification",
-		"file://"+repoRoot,
 	)
 	args = append(args, extraFlags...)
 	err := sh.Piper(
@@ -832,13 +917,7 @@ func runTrufflehog(extraFlags ...string) error {
 	return nil
 }
 
-func secretsHookWorker(pushRefs []changelog.PushRef) error {
-	if len(pushRefs) == 0 {
-		slog.Warn("no refs pushed, skipping secrets hook")
-		return nil
-	}
-
-	slog.Info("Scanning for secrets using trufflehog...")
+func runTrufflehogOnPushRefs(pushRefs []changelog.PushRef) error {
 	for _, ref := range pushRefs {
 		// Skip deleted refs - nothing to scan.
 		if ref.LocalSHA == changelog.ZeroSHA {
@@ -858,7 +937,33 @@ func secretsHookWorker(pushRefs []changelog.PushRef) error {
 			extraFlags = append(extraFlags, "--since-commit="+ref.RemoteSHA)
 		}
 
-		if err := runTrufflehog(extraFlags...); err != nil {
+		extraFlags = append(extraFlags, "file://"+repoRoot)
+
+		if err := runTrufflehog([]string{"git"}, extraFlags...); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func secretsHookWorker(pushRefs []changelog.PushRef) error {
+	if len(pushRefs) == 0 {
+		slog.Warn("no refs pushed, skipping secrets hook")
+		return nil
+	}
+
+	slog.Info("Scanning for secrets using trufflehog...")
+
+	// Check if we are in a worktree rather than a simple repo clone.
+	if gitutils.IsWorkTree(repoRoot) {
+		slog.Info("We are in a worktree; running trufflehog on filesystem...")
+		if err := runTrufflehog([]string{"filesystem", "."}); err != nil {
+			return err
+		}
+	} else {
+		slog.Info("Running trufflehog on pushrefs...")
+		if err := runTrufflehogOnPushRefs(pushRefs); err != nil {
 			return err
 		}
 	}
