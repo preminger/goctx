@@ -37,13 +37,6 @@ jobs:
           echo "GOMAXPROCS=${cores}" >> "$GITHUB_ENV"
           echo "Number of cores: ${cores}"
 
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          # If your repo has a go.mod, this will pick the version from it.
-          go-version-file: go.mod
-          cache: true
-
       - name: Cache Homebrew downloads
         id: brew_dl
         uses: actions/cache@v6
@@ -85,6 +78,13 @@ jobs:
         run: |
           brew upgrade go >& /dev/null || brew install go
           brew bundle --file=Brewfile
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          # If your repo has a go.mod, this will pick the version from it.
+          go-version-file: go.mod
+          cache: true
 
       - name: Install stave
         run: go install github.com/yaklabco/stave@latest
