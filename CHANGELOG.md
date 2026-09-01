@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.54] - 2026-09-01
+
+### Changed
+
+- Bump all updatable Go dependencies to their latest versions as of this date.
+- Run `golangci-lint` and `goreleaser` as executables (installed via the `Brewfile`) instead of `go tool`s, and adjust `go.mod`/`go.sum` accordingly.
+
 ## [0.17.53] - 2026-08-29
 
 ### Changed
@@ -747,7 +754,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.17.53...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.17.54...HEAD
+[0.17.54]: https://github.com/preminger/goctx/compare/v0.17.53...v0.17.54
 [0.17.53]: https://github.com/preminger/goctx/compare/v0.17.52...v0.17.53
 [0.17.52]: https://github.com/preminger/goctx/compare/v0.17.51...v0.17.52
 [0.17.51]: https://github.com/preminger/goctx/compare/v0.17.50...v0.17.51
