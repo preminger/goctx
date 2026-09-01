@@ -1,6 +1,6 @@
 module github.com/preminger/goctx
 
-go 1.26.7
+go 1.27.1
 
 require (
 	charm.land/lipgloss/v2 v2.0.6
@@ -10,7 +10,7 @@ require (
 	github.com/sebdah/goldie/v2 v2.8.0
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
-	github.com/yaklabco/stave v0.16.18
+	github.com/yaklabco/stave v0.16.19
 	golang.org/x/sync v0.22.0
 	golang.org/x/tools v0.49.0
 )
