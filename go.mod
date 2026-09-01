@@ -10,7 +10,7 @@ require (
 	github.com/sebdah/goldie/v2 v2.8.0
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
-	github.com/yaklabco/stave v0.16.19
+	github.com/yaklabco/stave v0.16.20
 	golang.org/x/sync v0.22.0
 	golang.org/x/tools v0.49.0
 )
@@ -65,7 +65,7 @@ require (
 	github.com/spf13/viper v1.21.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/xo/terminfo v1.0.0 // indirect
-	github.com/yaklabco/direnv/v2 v2.37.2-0.20260819152646-402e0d00c3dc // indirect
+	github.com/yaklabco/direnv/v2 v2.37.2-0.20260901211456-f768a31df494 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/exp v0.0.0-20260824195058-e88cd73687aa // indirect
 	golang.org/x/mod v0.40.0 // indirect
