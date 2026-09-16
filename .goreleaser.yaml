@@ -108,3 +108,5 @@ release:
   github:
     owner: preminger
     name: goctx
+
+force_token: github
