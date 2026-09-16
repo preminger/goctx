@@ -39,14 +39,10 @@ const (
 
 	coverageOutFilename  = "coverage.out"
 	coverageHTMLFilename = "coverage.html"
-
-	dbUpPollingInterval = 1 * time.Second
-	dbUpPollingTimeout  = 20 * time.Second
 )
 
 var (
-	repoRoot  string
-	devDBPath string
+	repoRoot string
 )
 
 func init() {
@@ -65,8 +61,6 @@ func init() {
 	if err != nil {
 		panic(fmt.Errorf("failed to get absolute path for repository root: %w", err))
 	}
-
-	devDBPath = filepath.Join(repoRoot, ".devdb")
 }
 
 // *********************************************************************

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.58] - 2026-09-16
+
+### Removed
+
+- Removed db-related leftovers from `stavefile.go`.
+
 ## [0.17.57] - 2026-09-15
 
 ### Changed
