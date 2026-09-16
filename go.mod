@@ -10,7 +10,7 @@ require (
 	github.com/sebdah/goldie/v2 v2.8.0
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
-	github.com/yaklabco/stave v0.17.1
+	github.com/yaklabco/stave v0.17.2
 	golang.org/x/sync v0.23.0
 	golang.org/x/tools v0.50.0
 )
@@ -20,7 +20,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.5.0 // indirect
 	github.com/axw/gocov v1.2.1 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
-	github.com/bitfield/gotestdox v0.2.2 // indirect
+	github.com/bitfield/gotestdox v0.2.3 // indirect
 	github.com/caarlos0/svu/v3 v3.4.1 // indirect
 	github.com/charmbracelet/colorprofile v0.4.3 // indirect
 	github.com/charmbracelet/lipgloss v1.1.0 // indirect

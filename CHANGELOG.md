@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.59] - 2026-09-16
+
+### Changed
+
+- Bump `stave` to `v0.17.2`.
+- Bump all updatable Go dependencies to their latest versions as of this date.
+
 ## [0.17.58] - 2026-09-16
 
 ### Added
@@ -784,7 +791,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.17.58...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.17.59...HEAD
+[0.17.59]: https://github.com/preminger/goctx/compare/v0.17.58...v0.17.59
 [0.17.58]: https://github.com/preminger/goctx/compare/v0.17.57...v0.17.58
 [0.17.57]: https://github.com/preminger/goctx/compare/v0.17.56...v0.17.57
 [0.17.56]: https://github.com/preminger/goctx/compare/v0.17.55...v0.17.56
