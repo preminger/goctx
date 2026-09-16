@@ -39,14 +39,10 @@ const (
 
 	coverageOutFilename  = "coverage.out"
 	coverageHTMLFilename = "coverage.html"
-
-	dbUpPollingInterval = 1 * time.Second
-	dbUpPollingTimeout  = 20 * time.Second
 )
 
 var (
-	repoRoot  string
-	devDBPath string
+	repoRoot string
 )
 
 func init() {
@@ -65,8 +61,6 @@ func init() {
 	if err != nil {
 		panic(fmt.Errorf("failed to get absolute path for repository root: %w", err))
 	}
-
-	devDBPath = filepath.Join(repoRoot, ".devdb")
 }
 
 // *********************************************************************
@@ -587,7 +581,12 @@ func (Test) Go(ctx context.Context) error {
 	group, _ := errgroup.WithContext(ctx)
 
 	group.Go(func() error {
-		defer pipeW.Close()
+		defer func(pipeW *io.PipeWriter) {
+			err := pipeW.Close()
+			if err != nil {
+				slog.Error("error closing pipe writer", "err", err)
+			}
+		}(pipeW)
 		slog.Debug("converting coverage output to JSON...")
 		if err := sh.Piper(nil, pipeW, os.Stderr, "go", "tool", "gocov", "convert", coverageOutFilename); err != nil {
 			return fmt.Errorf("error converting %q to JSON: %w", coverageOutFilename, err)
