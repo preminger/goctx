@@ -9,8 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.17.58] - 2026-09-16
 
+### Added
+
+- Added `force_token: github` to `.goreleaser.yaml`, so that it works even when multiple git hosts' tokens are set in the environment.
+
 ### Removed
 
+- Bump `stave` to `v0.17.1`.
 - Removed db-related leftovers from `stavefile.go`.
 
 ## [0.17.57] - 2026-09-15
@@ -779,7 +784,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.17.57...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.17.58...HEAD
+[0.17.58]: https://github.com/preminger/goctx/compare/v0.17.57...v0.17.58
 [0.17.57]: https://github.com/preminger/goctx/compare/v0.17.56...v0.17.57
 [0.17.56]: https://github.com/preminger/goctx/compare/v0.17.55...v0.17.56
 [0.17.55]: https://github.com/preminger/goctx/compare/v0.17.54...v0.17.55
