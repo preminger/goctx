@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.60] - 2026-09-17
+
+### Fixed
+
+- Handling of single-commit condition in `commitlint` functionality (in `stavefile.go`).
+
 ## [0.17.59] - 2026-09-16
 
 ### Changed
@@ -791,7 +797,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.17.59...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.17.60...HEAD
+[0.17.60]: https://github.com/preminger/goctx/compare/v0.17.59...v0.17.60
 [0.17.59]: https://github.com/preminger/goctx/compare/v0.17.58...v0.17.59
 [0.17.58]: https://github.com/preminger/goctx/compare/v0.17.57...v0.17.58
 [0.17.57]: https://github.com/preminger/goctx/compare/v0.17.56...v0.17.57
