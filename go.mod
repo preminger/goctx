@@ -1,6 +1,6 @@
 module github.com/preminger/goctx
 
-go 1.27.1
+go 1.27.3
 
 require (
 	charm.land/lipgloss/v2 v2.0.6
@@ -10,9 +10,9 @@ require (
 	github.com/sebdah/goldie/v2 v2.8.0
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
-	github.com/yaklabco/stave v0.17.5
+	github.com/yaklabco/stave v0.17.6
 	golang.org/x/sync v0.24.0
-	golang.org/x/tools v0.51.0
+	golang.org/x/tools v0.52.0
 )
 
 require (
@@ -65,13 +65,13 @@ require (
 	github.com/spf13/viper v1.21.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/xo/terminfo v1.2.0 // indirect
-	github.com/yaklabco/direnv/v2 v2.38.2-0.20261009133232-914d4e2710fa // indirect
+	github.com/yaklabco/direnv/v2 v2.38.2-0.20261020123124-a1b95736f4db // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
-	golang.org/x/exp v0.0.0-20261007192929-f45ad48fbe92 // indirect
-	golang.org/x/mod v0.41.0 // indirect
+	golang.org/x/exp v0.0.0-20261014143641-f0251eb4aa3e // indirect
+	golang.org/x/mod v0.42.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
-	golang.org/x/term v0.46.0 // indirect
-	golang.org/x/text v0.42.0 // indirect
+	golang.org/x/term v0.47.0 // indirect
+	golang.org/x/text v0.43.0 // indirect
 	gotest.tools/gotestsum v1.13.0 // indirect
 )
 

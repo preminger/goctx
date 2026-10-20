@@ -60,7 +60,7 @@ func Run(_ context.Context, opts Options) error {
 	slog.Debug("target parsed", slog.String("file", tgtSpec.File), slog.String("func", tgtSpec.FuncName), slog.Int("line", tgtSpec.LineNumber))
 	stopSpec, err := parseStopSpec(opts.StopAt)
 	if err != nil {
-		if _, ok := errors.AsType[noStopSpecError](err); !ok { //nolint:errcheck // False positive.
+		if _, ok := errors.AsType[noStopSpecError](err); !ok {
 			slog.Debug("stopAt parse error", slog.String("stopAt", opts.StopAt), slog.Any("error", err))
 			return err
 		}
