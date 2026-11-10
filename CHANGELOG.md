@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.65] - 2026-11-10
+
+### Fixed
+
+- Correct target binary for Homebrew post-install hook.
+
 ## [0.17.64] - 2026-11-10
 
 ### Changed
@@ -822,7 +828,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-10-30
 
-[unreleased]: https://github.com/preminger/goctx/compare/v0.17.64...HEAD
+[unreleased]: https://github.com/preminger/goctx/compare/v0.17.65...HEAD
+[0.17.65]: https://github.com/preminger/goctx/compare/v0.17.64...v0.17.65
 [0.17.64]: https://github.com/preminger/goctx/compare/v0.17.63...v0.17.64
 [0.17.63]: https://github.com/preminger/goctx/compare/v0.17.62...v0.17.63
 [0.17.62]: https://github.com/preminger/goctx/compare/v0.17.61...v0.17.62
