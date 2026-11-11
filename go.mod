@@ -10,9 +10,9 @@ require (
 	github.com/sebdah/goldie/v2 v2.8.0
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
-	github.com/yaklabco/stave v0.17.7
+	github.com/yaklabco/stave v0.17.9
 	golang.org/x/sync v0.25.0
-	golang.org/x/tools v0.52.1-0.20261110172013-92cccd32abb2
+	golang.org/x/tools v0.52.1-0.20261111171530-d4453b555d58
 )
 
 require (
