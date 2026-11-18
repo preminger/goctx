@@ -25,7 +25,7 @@ linters:
     exhaustive:
       check:
         - switch
-        - map
+        - mapliteral
     funlen:
       lines: 150
       statements: 100
